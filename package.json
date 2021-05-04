@@ -1,0 +1,19 @@
+{
+  "name": "q_and_a",
+  "version": "1.0.0",
+  "description": "questions and answers service for catwalk",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hack-Reactor-Earth/Q_and_A.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Hack-Reactor-Earth/Q_and_A/issues"
+  },
+  "homepage": "https://github.com/Hack-Reactor-Earth/Q_and_A#readme"
+}
