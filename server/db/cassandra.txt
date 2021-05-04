@@ -1,0 +1,4 @@
+DATABASE
+-KEYSPACE [people]
+--TABLE-COLUMNS [susbscribers]
+---FIELDS[id uuid, first_name, last_name, email]a
