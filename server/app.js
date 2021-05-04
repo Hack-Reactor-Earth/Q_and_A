@@ -1,9 +1,18 @@
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
+const cassandra = require('cassandra-driver')
+// routers
 const questions = require('./controllers/questions');
 const answers = require('./controllers/answers');
 const photos = require('./controllers/photos');
+
+
+const client = new cassandra.Client({
+  contactPoints: ['localhost']
+});
+
+
 
 const port = 5000;
 
