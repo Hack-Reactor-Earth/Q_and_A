@@ -9,8 +9,17 @@ const photos = require('./controllers/photos');
 
 
 const client = new cassandra.Client({
-  contactPoints: ['localhost']
+  contactPoints: ['localhost'],
+  localDataCenter: 'datacenter1',
+  keyspace: 'people',
 });
+
+client.connect(() => [
+  console.log('app: cassandra connected')
+])
+
+const getAllSubscribers = 'SELECT * FROM subscribers'
+
 
 
 
@@ -31,8 +40,13 @@ app.use('/api/questions', questions);
 app.use('/api/answers', answers);
 app.use('/api/photos', photos);
 
-app.get('/', (req, res) => {
-  res.status(200).json({message: 'Welcome to Q&A service'})
+app.get('/', async (req, res) => {
+  try {
+    const data = await client.execute(getAllSubscribers, []);
+  res.status(200).json(data.rows)
+  } catch(err) {
+    console.log(err)
+  }
 })
 
 app.listen(port, () => {
