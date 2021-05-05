@@ -1,29 +1,11 @@
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
-// const db = require('./db/schema')
-// const cassandra = require('cassandra-driver')
+const db = require('./db/index')
 // routers
 const questions = require('./controllers/questions');
 const answers = require('./controllers/answers');
 const photos = require('./controllers/photos');
-
-
-// const client = new cassandra.Client({
-//   contactPoints: ['localhost'],
-//   localDataCenter: 'datacenter1',
-//   keyspace: 'q_and_a',
-// });
-
-// client.connect(() => [
-//   console.log('app: cassandra connected')
-// ])
-
-
-// const getAllSubscribers = 'SELECT * FROM subscribers'
-
-
-
 
 const port = 5000;
 
@@ -44,8 +26,7 @@ app.use('/api/photos', photos);
 
 app.get('/', async (req, res) => {
   try {
-    const data = await db.execute(db.getAllSubscribers, []);
-  res.status(200).json(data.rows)
+  res.status(200).json({message: 'hello from Q&A server'})
   } catch(err) {
     console.log(err)
   }
