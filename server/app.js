@@ -1,7 +1,7 @@
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
-const db = require('./db/schema')
+// const db = require('./db/schema')
 // const cassandra = require('cassandra-driver')
 // routers
 const questions = require('./controllers/questions');

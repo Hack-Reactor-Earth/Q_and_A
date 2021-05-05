@@ -11,9 +11,9 @@ client.connect(() => [
 
 const dropDB = `DROP KEYSPACE IF EXISTS q_and_a`
 
-const createDB = `CREATE KEYSPACE q_and_a WITH REPLICATION = {'class':'SimpleStrategy', 'replication_factor':3}`
+const createDB = `CREATE KEYSPACE IF NOT EXISTS q_and_a WITH REPLICATION = {'class':'SimpleStrategy', 'replication_factor':3}`
 
-const createQuestionsTable = `CREATE TABLE q_and_a.questions (
+const createQuestionsTable = `CREATE TABLE IF NOT EXISTS q_and_a.questions (
     id int,
     product_id int,
     body text,
@@ -24,7 +24,7 @@ const createQuestionsTable = `CREATE TABLE q_and_a.questions (
     helpful int,
     PRIMARY KEY(id, product_id, date_written)
     );`
-const createAnswersTable = `CREATE TABLE q_and_a.answers (
+const createAnswersTable = `CREATE TABLE IF NOT EXISTS q_and_a.answers (
     id int,
     question_id int,
     body text,
@@ -35,7 +35,7 @@ const createAnswersTable = `CREATE TABLE q_and_a.answers (
     helpful int,
     PRIMARY KEY(id, question_id, date_written)
     );`
-const createAnswersPhotosTable = `CREATE TABLE q_and_a.answers_photos (
+const createAnswersPhotosTable = `CREATE TABLE IF NOT EXISTS q_and_a.answers_photos (
     id int,
     answer_id int,
     url text,
@@ -108,14 +108,14 @@ const getAllQuestions = `SELECT * FROM q_and_a.questions`
 
 const runSchema = async () => {
   try {
-  await client.execute(dropDB, []);
-  await client.execute(createDB, []);
-  await client.execute(createQuestionsTable, []);
-  await client.execute(createAnswersTable, []);
-  await client.execute(createAnswersPhotosTable, []);
-  await client.batch(queries, {prepare: true});
-  const data = await client.execute(getAllQuestions, []);
-  console.log(data.rows)
+  await client.execute(dropDB, [])
+  // await client.execute(createDB, []);
+  // await client.execute(createQuestionsTable, []);
+  // await client.execute(createAnswersTable, []);
+  // await client.execute(createAnswersPhotosTable, []);
+  // await client.batch(queries, {prepare: true});
+  // const data = await client.execute(getAllQuestions, []);
+  // console.log(data.rows)
   } catch (err) {
     console.log(err)
   }
