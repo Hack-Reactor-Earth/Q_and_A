@@ -1,10 +1,13 @@
-QUERIES FOR COPYING CSV DATA TO dropDB
-
-copy questions (id, product_id, body, date_written, asker_name, asker_email, reported, helpful) from '../questions.csv' with header = true and numprocesses=4;
-
-copy answers (id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) from '../answers.csv' with header = true and numprocesses=8;
 
 
-copy answers_photos (id, answer_id, url) from '../answers_photos.csv' with header = true and numprocesses=8;
+
+QUERIES FOR COPYING CSV DATA TO table
+
+copy questions (id, product_id, body, date_written, asker_name, asker_email, reported, helpful) from '../questions.csv' with header = true and numprocesses=6;
+
+copy answers (id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) from '../answers.csv' with header = true and numprocesses=6;
+
+
+copy answers_photos (id, answer_id, url) from '../answers_photos.csv' with header = true and numprocesses=6;
 
 
