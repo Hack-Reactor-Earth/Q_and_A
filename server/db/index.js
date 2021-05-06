@@ -82,7 +82,7 @@ const createQuestionsAndAnswersTable = `CREATE TABLE IF NOT EXISTS q_and_a.quest
     asker_email text,
     reported boolean,
     helpful int,
-    answers frozen<answer>,
+    answers list<frozen<answer>>,
     PRIMARY KEY(product_id, id, date_written, helpful)
     );`
 
