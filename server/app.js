@@ -26,9 +26,8 @@ app.use('/api/photos', photos);
 
 app.get('/', async (req, res) => {
   try {
-    const answers = await db.client.execute(db.getAllAnswersWithPhotos, [])
-    console.log(answers.rows)
-  res.status(200).json(answers.rows)
+    const answers = await db.client.execute(db.getAllQuestionsWithAnswers, [])
+    res.status(200).json(answers.rows)
   } catch(err) {
     console.log(err)
   }
