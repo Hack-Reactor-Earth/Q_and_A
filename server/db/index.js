@@ -247,7 +247,7 @@ populateQAmix();
   *                      Run helpers
   ***************************************************************************** */
 // runSchema();
-buildCombinedTables();
+// buildCombinedTables();
 
 
 module.exports = {client, getAllAnswersWithPhotos, getAllQuestionsWithAnswers}
