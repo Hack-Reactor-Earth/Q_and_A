@@ -69,7 +69,7 @@ answersWithPhotos (
     answerer_email text,
     reported boolean,
     helpful int,
-    photos frozen<photo>,
+    photos list<frozen<photo>>,
     PRIMARY KEY(question_id, id, date_written, helpful)
 );`
 
@@ -96,9 +96,10 @@ const insertAnswer = `INSERT INTO q_and_a.answersWithPhotos(
     answerer_name,
     answerer_email,
     reported,
-    helpful
+    helpful,
+    photos
    )
-   VALUES(?, ?, ?, ?, ?, ?, ?, ?)`
+   VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`
 const insertPhoto = `INSERT INTO q_and_a.answersWithPhotos(
   id,
   question_id,
@@ -108,19 +109,17 @@ const insertPhoto = `INSERT INTO q_and_a.answersWithPhotos(
 )
 VALUES(?, ?, ?, ?, ?)`
 
-
+const getAllAnswersWithPhotos = `SELECT * FROM q_and_a.answersWithPhotos`
 
 const populateAPmix = async () => {
   try {
   const answers = await client.execute(allAnswers, []);
-  // loop over each answer and for each answer
-    // Insert all answer data into answersWithPhotos table
-    // console.log((answers.rows[0].id).toString())
-    // const photos = await client.execute(answerPhotos, [114], {prepare: true})
-    // console.log(photos)
 
     Promise.all(
+    // loop over each answer and for each answer
       answers.rows.map(async (answer) => {
+    // Insert all answer data into answersWithPhotos table|
+      const photos = await client.execute(answerPhotos, [answer.id], {prepare: true})
       await client.execute(insertAnswer, [
         answer.id,
         answer.question_id,
@@ -129,37 +128,36 @@ const populateAPmix = async () => {
         answer.answerer_name,
         answer.answerer_email,
         answer.reported,
-        answer.helpful
+        answer.helpful,
+        photos.rows
         ], {prepare: true})
-      const photos = await client.execute(answerPhotos, [answer.id], {prepare: true})
-      photos.rows.length > 0 && photos.rows.map(async (photo) => {
-        console.log(photo)
-        try {
-          await client.execute(insertPhoto, [
-          answer.id,
-          answer.question_id,
-          answer.date_written,
-          answer.helpful,
-          {
-            id: photo.id,
-            answer_id: photo.answer_id,
-            url: photo.url
-          }
-        ], {prepare: true})
-        } catch (err) {
-          console.log(err)
-        }
 
-      })
+      // get all photos for each answer
+      // if the answer has photos insert all the data of that photo into the photos list in the answersWithPhotos table
+
+      // photos.rows.length > 0 && photos.rows.map(async (photo) => {
+      //   try {
+      //     await client.execute(insertPhoto, [
+      //     answer.id,
+      //     answer.question_id,
+      //     answer.date_written,
+      //     answer.helpful,
+      //     {
+      //       id: photo.id,
+      //       answer_id: photo.answer_id,
+      //       url: photo.url
+      //     }
+      //   ], {prepare: true})
+      //   } catch (err) {
+      //     console.log(err)
+      //   }
+      // })
     })
     )
-
-    // get photos by answer id
-    // also upsert each photo data into that answer table phots field
-
   } catch (err) {
     console.log(err)
   }
+
 }
 
 const getAllQuestions = `Describe atelier_products`
@@ -177,7 +175,7 @@ const runSchema = async () => {
   // await client.execute(createQuestionsAndAnswersTable, []);
   populateAPmix();
 
-  // const data = await client.execute(getAllQuestions, []);
+  // const data = await client.execute(getAllAnswersWithPhotos, []);
   // console.log('query', data.rows)
   } catch (err) {
     console.log(err)
@@ -186,4 +184,4 @@ const runSchema = async () => {
 runSchema();
 
 
-module.exports = client
+module.exports = {client, getAllAnswersWithPhotos}
