@@ -20,14 +20,13 @@ app.use(bodyParser.urlencoded({extended: true}));
   *                      Use routes
   ***************************************************************************** */
 
-app.use('/api/questions', questions);
-app.use('/api/answers', answers);
-app.use('/api/photos', photos);
+app.use('/qa/questions', questions);
+app.use('/aq/answers', answers);
+app.use('/qa/photos', photos);
 
 app.get('/', async (req, res) => {
   try {
-    const answers = await db.client.execute(db.getAllQuestionsWithAnswers, [])
-    res.status(200).json(answers.rows)
+    res.status(200).json({message: 'Hello from Q&A service'})
   } catch(err) {
     console.log(err)
   }
