@@ -1,8 +1,15 @@
-const cassandra = require('cassandra-driver')
+const cassandra = require('cassandra-driver');
+const distance = cassandra.types.distance;
 
 const client = new cassandra.Client({
   contactPoints: ['localhost'],
   localDataCenter: 'datacenter1',
+  pooling: {
+        coreConnectionsPerHost: {
+          [distance.local] : 8,
+          [distance.remote] : 4
+        }
+     },
   keyspace: 'q_and_a',
 });
 
@@ -154,7 +161,8 @@ const populateAPmix = async () => {
     Promise.all(
     // loop over each answer and for each answer
       answers.rows.map(async (answer) => {
-      // get all photos for current answer
+        try {
+// get all photos for current answer
       const photos = await client.execute(answerPhotos, [answer.id], {prepare: true})
       // Insert all answer data into answersWithPhotos table with photos array
       await client.execute(insertAnswer, [
@@ -168,6 +176,10 @@ const populateAPmix = async () => {
         answer.helpful,
         photos.rows
         ], {prepare: true})
+        } catch (err) {
+          console.log(err)
+        }
+
     })
     )
   } catch (err) {
@@ -177,13 +189,12 @@ const populateAPmix = async () => {
 const populateQAmix = async () => {
   try {
   const questions = await client.execute(allQuestions, []);
-  console.log(questions.rows)
     Promise.all(
     // loop over each question and for each question
       questions.rows.map(async (question) => {
-      // get all answers with photos for current answer
+        try {
+// get all answers with photos for current answer
       const answers = await client.execute(questionAnswers, [question.id], {prepare: true})
-      console.log(answers.rows)
       // Insert all answer data into questionsWithAnswers table with photos array
       await client.execute(insertQuestion, [
         question.id,
@@ -196,6 +207,9 @@ const populateQAmix = async () => {
         question.helpful,
         answers.rows
         ], {prepare: true})
+        } catch(err) {
+          console.log(err)
+        }
     })
     )
   } catch (err) {
@@ -221,6 +235,7 @@ const runSchema = async () => {
     console.log(err)
   }
 }
+
 
 const buildCombinedTables = () => {
 populateAPmix();
