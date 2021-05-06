@@ -13,6 +13,9 @@ const dropDB = `DROP KEYSPACE IF EXISTS q_and_a`
 
 const createDB = `CREATE KEYSPACE IF NOT EXISTS q_and_a WITH REPLICATION = {'class':'SimpleStrategy', 'replication_factor':3}`
 
+  /** ****************************************************************************
+  *                      Initial tables to load csv data into
+  ***************************************************************************** */
 const createQuestionsTable = `CREATE TABLE IF NOT EXISTS q_and_a.questions (
     id int,
     product_id int,
@@ -42,6 +45,9 @@ const createAnswersPhotosTable = `CREATE TABLE IF NOT EXISTS q_and_a.answers_pho
     PRIMARY KEY(answer_id, id)
     );`
 
+  /** ****************************************************************************
+  *                      Defined user types
+  ***************************************************************************** */
 const createPhotoType = `CREATE TYPE q_and_a.photo (
     id int,
     answer_id int,
@@ -59,6 +65,9 @@ const createAnswerType = `CREATE TYPE q_and_a.answer (
     helpful int
   );`
 
+  /** ****************************************************************************
+  *                      Tables to merge and nest data
+  ***************************************************************************** */
 const createAnswersWithPhotos = `CREATE TABLE IF NOT EXISTS q_and_a.
 answersWithPhotos (
     id int,
@@ -86,8 +95,14 @@ const createQuestionsAndAnswersTable = `CREATE TABLE IF NOT EXISTS q_and_a.quest
     PRIMARY KEY(product_id, id, date_written, helpful)
     );`
 
+  /** ****************************************************************************
+  *                      Queries
+  ***************************************************************************** */
+// * read
 const allAnswers = `SELECT * FROM q_and_a.answers`
 const answerPhotos = `SELECT * FROM q_and_a.answers_photos WHERE answer_id = ?`
+const getAllAnswersWithPhotos = `SELECT * FROM q_and_a.answersWithPhotos`
+// * write
 const insertAnswer = `INSERT INTO q_and_a.answersWithPhotos(
     id,
     question_id,
@@ -109,8 +124,10 @@ const insertPhoto = `INSERT INTO q_and_a.answersWithPhotos(
 )
 VALUES(?, ?, ?, ?, ?)`
 
-const getAllAnswersWithPhotos = `SELECT * FROM q_and_a.answersWithPhotos`
 
+  /** ****************************************************************************
+  *                      Helper functions to build new tables
+  ***************************************************************************** */
 const populateAPmix = async () => {
   try {
   const answers = await client.execute(allAnswers, []);
@@ -118,8 +135,9 @@ const populateAPmix = async () => {
     Promise.all(
     // loop over each answer and for each answer
       answers.rows.map(async (answer) => {
-    // Insert all answer data into answersWithPhotos table|
+      // get all photos for current answer
       const photos = await client.execute(answerPhotos, [answer.id], {prepare: true})
+      // Insert all answer data into answersWithPhotos table with photos array
       await client.execute(insertAnswer, [
         answer.id,
         answer.question_id,
@@ -131,27 +149,6 @@ const populateAPmix = async () => {
         answer.helpful,
         photos.rows
         ], {prepare: true})
-
-      // get all photos for each answer
-      // if the answer has photos insert all the data of that photo into the photos list in the answersWithPhotos table
-
-      // photos.rows.length > 0 && photos.rows.map(async (photo) => {
-      //   try {
-      //     await client.execute(insertPhoto, [
-      //     answer.id,
-      //     answer.question_id,
-      //     answer.date_written,
-      //     answer.helpful,
-      //     {
-      //       id: photo.id,
-      //       answer_id: photo.answer_id,
-      //       url: photo.url
-      //     }
-      //   ], {prepare: true})
-      //   } catch (err) {
-      //     console.log(err)
-      //   }
-      // })
     })
     )
   } catch (err) {
@@ -159,8 +156,6 @@ const populateAPmix = async () => {
   }
 
 }
-
-const getAllQuestions = `Describe atelier_products`
 
 const runSchema = async () => {
   try {
