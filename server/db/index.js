@@ -3,20 +3,21 @@ const cassandra = require('cassandra-driver')
 const client = new cassandra.Client({
   contactPoints: ['localhost'],
   localDataCenter: 'datacenter1',
+  keyspace: 'q_and_a',
 });
 
 client.connect(() => [
   console.log('app: cassandra connected')
 ])
 
-const dropDB = `DROP KEYSPACE IF EXISTS q_and_a`
+// const dropKeySpace = `DROP KEYSPACE IF EXISTS q_and_a`
 
-const createDB = `CREATE KEYSPACE IF NOT EXISTS q_and_a WITH REPLICATION = {'class':'SimpleStrategy', 'replication_factor':3}`
+const createKeySpace = `CREATE KEYSPACE IF NOT EXISTS q_and_a WITH REPLICATION = {'class':'SimpleStrategy', 'replication_factor':3}`
 
   /** ****************************************************************************
   *                      Initial tables to load csv data into
   ***************************************************************************** */
-const createQuestionsTable = `CREATE TABLE IF NOT EXISTS q_and_a.questions (
+const createQuestionsTable = `CREATE TABLE IF NOT EXISTS questions (
     id int,
     product_id int,
     body text,
@@ -27,7 +28,7 @@ const createQuestionsTable = `CREATE TABLE IF NOT EXISTS q_and_a.questions (
     helpful int,
     PRIMARY KEY(id, product_id, date_written)
     );`
-const createAnswersTable = `CREATE TABLE IF NOT EXISTS q_and_a.answers (
+const createAnswersTable = `CREATE TABLE IF NOT EXISTS answers (
     id int,
     question_id int,
     body text,
@@ -38,7 +39,7 @@ const createAnswersTable = `CREATE TABLE IF NOT EXISTS q_and_a.answers (
     helpful int,
     PRIMARY KEY(question_id, id, date_written)
     );`
-const createAnswersPhotosTable = `CREATE TABLE IF NOT EXISTS q_and_a.answers_photos (
+const createAnswersPhotosTable = `CREATE TABLE IF NOT EXISTS answers_photos (
     id int,
     answer_id int,
     url text,
@@ -48,13 +49,13 @@ const createAnswersPhotosTable = `CREATE TABLE IF NOT EXISTS q_and_a.answers_pho
   /** ****************************************************************************
   *                      Defined user types
   ***************************************************************************** */
-const createPhotoType = `CREATE TYPE q_and_a.photo (
+const createPhotoType = `CREATE TYPE IF NOT EXISTS  photo (
     id int,
     answer_id int,
     url text
 );`
 
-const createAnswerType = `CREATE TYPE q_and_a.answer (
+const createAnswerType = `CREATE TYPE IF NOT EXISTS  answer (
     id int,
     question_id int,
     body text,
@@ -62,13 +63,14 @@ const createAnswerType = `CREATE TYPE q_and_a.answer (
     answerer_name text,
     answerer_email text,
     reported boolean,
-    helpful int
+    helpful int,
+    photos list<frozen<photo>>
   );`
 
   /** ****************************************************************************
   *                      Tables to merge and nest data
   ***************************************************************************** */
-const createAnswersWithPhotos = `CREATE TABLE IF NOT EXISTS q_and_a.
+const createAnswersWithPhotosTable = `CREATE TABLE IF NOT EXISTS
 answersWithPhotos (
     id int,
     question_id int,
@@ -82,7 +84,7 @@ answersWithPhotos (
     PRIMARY KEY(question_id, id, date_written, helpful)
 );`
 
-const createQuestionsAndAnswersTable = `CREATE TABLE IF NOT EXISTS q_and_a.questionsAndAnswers (
+const createQuestionsWithAnswersTable = `CREATE TABLE IF NOT EXISTS questionsWithAnswers (
     id int,
     product_id int,
     body text,
@@ -99,11 +101,14 @@ const createQuestionsAndAnswersTable = `CREATE TABLE IF NOT EXISTS q_and_a.quest
   *                      Queries
   ***************************************************************************** */
 // * read
-const allAnswers = `SELECT * FROM q_and_a.answers`
-const answerPhotos = `SELECT * FROM q_and_a.answers_photos WHERE answer_id = ?`
-const getAllAnswersWithPhotos = `SELECT * FROM q_and_a.answersWithPhotos`
+const allAnswers = `SELECT * FROM answers`
+const allQuestions = `SELECT * FROM questions`
+const answerPhotos = `SELECT * FROM answers_photos WHERE answer_id = ?`
+const questionAnswers = `SELECT * FROM answersWithPhotos WHERE question_id = ?`
+const getAllAnswersWithPhotos = `SELECT * FROM answersWithPhotos`
+const getAllQuestionsWithAnswers = `SELECT * FROM questionsWithAnswers`
 // * write
-const insertAnswer = `INSERT INTO q_and_a.answersWithPhotos(
+const insertAnswer = `INSERT INTO answersWithPhotos(
     id,
     question_id,
     body,
@@ -115,7 +120,21 @@ const insertAnswer = `INSERT INTO q_and_a.answersWithPhotos(
     photos
    )
    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`
-const insertPhoto = `INSERT INTO q_and_a.answersWithPhotos(
+
+const insertQuestion = `INSERT INTO questionsWithAnswers(
+    id,
+    product_id,
+    body,
+    date_written,
+    asker_name,
+    asker_email,
+    reported,
+    helpful,
+    answers
+    )
+Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+const insertPhoto = `INSERT INTO answersWithPhotos(
   id,
   question_id,
   date_written,
@@ -154,29 +173,66 @@ const populateAPmix = async () => {
   } catch (err) {
     console.log(err)
   }
-
 }
-
-const runSchema = async () => {
+const populateQAmix = async () => {
   try {
-  // await client.execute(dropDB, [])
-  // await client.execute(createDB, []);
-  // await client.execute(createQuestionsTable, []);
-  // await client.execute(createAnswersTable, []);
-  // await client.execute(createAnswersPhotosTable, []);
-  // await client.execute(createPhotoType, []);
-  // await client.execute(createAnswerType, []);
-  // await client.execute(createAnswersWithPhotos, []);
-  // await client.execute(createQuestionsAndAnswersTable, []);
-  populateAPmix();
-
-  // const data = await client.execute(getAllAnswersWithPhotos, []);
-  // console.log('query', data.rows)
+  const questions = await client.execute(allQuestions, []);
+  console.log(questions.rows)
+    Promise.all(
+    // loop over each question and for each question
+      questions.rows.map(async (question) => {
+      // get all answers with photos for current answer
+      const answers = await client.execute(questionAnswers, [question.id], {prepare: true})
+      console.log(answers.rows)
+      // Insert all answer data into questionsWithAnswers table with photos array
+      await client.execute(insertQuestion, [
+        question.id,
+        question.product_id,
+        question.body,
+        question.date_written,
+        question.asker_name,
+        question.asker_email,
+        question.reported,
+        question.helpful,
+        answers.rows
+        ], {prepare: true})
+    })
+    )
   } catch (err) {
     console.log(err)
   }
 }
-runSchema();
+
+  /** ****************************************************************************
+  *                      Helpers to build the schema
+  ***************************************************************************** */
+const runSchema = async () => {
+  try {
+  // await client.execute(dropKeySpace, [])
+  await client.execute(createKeySpace, []);
+  await client.execute(createQuestionsTable, []);
+  await client.execute(createAnswersTable, []);
+  await client.execute(createAnswersPhotosTable, []);
+  await client.execute(createPhotoType, []);
+  await client.execute(createAnswerType, []);
+  await client.execute(createAnswersWithPhotosTable, []);
+  await client.execute(createQuestionsWithAnswersTable, []);
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const buildCombinedTables = () => {
+populateAPmix();
+populateQAmix();
+}
 
 
-module.exports = {client, getAllAnswersWithPhotos}
+  /** ****************************************************************************
+  *                      Run helpers
+  ***************************************************************************** */
+// runSchema();
+buildCombinedTables();
+
+
+module.exports = {client, getAllAnswersWithPhotos, getAllQuestionsWithAnswers}
