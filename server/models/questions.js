@@ -6,7 +6,7 @@ const db = require('../db/index');
   ***************************************************************************** */
 
 const questionsByProductId = `
-SELECT * FROM questionsWithAnswers
+SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported, answers FROM questionsWithAnswers
 WHERE product_id = ?`;
 
 const getQuestionsByProductId = async (id, count, page) => {
@@ -27,7 +27,11 @@ const getQuestionsByProductId = async (id, count, page) => {
       curPage = [];
       pageCount--;
     }
-    return pages;
+    const result = {
+      product_id: id,
+      results: pages,
+    };
+    return result;
   } catch (err) {
     console.log(err);
   }
