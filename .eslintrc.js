@@ -16,5 +16,9 @@ module.exports = {
   },
   rules: {
     'no-console': 'off',
+    camelcase: 'off',
+    'consistent-return': 'off',
+    radix: 'off',
+    'no-plusplus': 'off',
   },
 };

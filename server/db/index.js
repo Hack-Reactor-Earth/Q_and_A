@@ -8,7 +8,11 @@ const client = new cassandra.Client({
   pooling: {
     coreConnectionsPerHost: {
       [distance.local]: 8,
-      [distance.remote]: 4,
+      [distance.remote]: 8,
+    },
+    maxRequestsPerConnection: {
+      [distance.local]: 8,
+      [distance.remote]: 8,
     },
   },
   keyspace: 'q_and_a',
@@ -147,45 +151,41 @@ Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   ***************************************************************************** */
 const populateAPmix = async () => {
   try {
-    const answers = await client.execute(allAnswers, []);
-
-    Promise.all(
-    // loop over each answer and for each answer
-      answers.rows.map(async (answer) => {
-        try {
-          // get all photos for current answer
-          const photos = await client.execute(answerPhotos, [answer.id], { prepare: true });
-          // Insert all answer data into answersWithPhotos table with photos array
-          await client.execute(insertAnswer, [
-            answer.id,
-            answer.question_id,
-            answer.body,
-            answer.date_written,
-            answer.answerer_name,
-            answer.answerer_email,
-            answer.reported,
-            answer.helpful,
-            photos.rows,
-          ], { prepare: true });
-        } catch (err) {
-          console.log(err);
-        }
-      }),
-    );
+    await client.eachRow(allAnswers, [], {
+      prepare: true, autoPage: true, fetchSize: 1000,
+    }, async (n, answer) => {
+      try {
+        const photos = await client.execute(
+          answerPhotos, [answer.id], { prepare: true, autoPage: true, fetchSize: 1000 },
+        );
+        // Insert all answer data into answersWithPhotos table with photos array
+        await client.execute(insertAnswer, [
+          answer.id,
+          answer.question_id,
+          answer.body,
+          answer.date_written,
+          answer.answerer_name,
+          answer.answerer_email,
+          answer.reported,
+          answer.helpful,
+          photos.rows,
+        ], { prepare: true, autoPage: true });
+      } catch (err) {
+        console.log(err);
+      }
+    });
   } catch (err) {
     console.log(err);
   }
 };
 const populateQAmix = async () => {
   try {
-    const questions = await client.execute(allQuestions, []);
-    Promise.all(
-    // loop over each question and for each question
-      questions.rows.map(async (question) => {
+    await client.eachRow(allQuestions, [],
+      { prepare: true, autoPage: true, fetchSize: 1000 }, async (n, question) => {
         try {
-          // get all answers with photos for current answer
-          const answers = await client.execute(questionAnswers, [question.id], { prepare: true });
-          // Insert all answer data into questionsWithAnswers table with photos array
+          const answers = await client.execute(
+            questionAnswers, [question.id], { prepare: true, fetchSize: 1000, autoPage: true },
+          );
           await client.execute(insertQuestion, [
             question.id,
             question.product_id,
@@ -196,12 +196,11 @@ const populateQAmix = async () => {
             question.reported,
             question.helpful,
             answers.rows,
-          ], { prepare: true });
+          ], { prepare: true, autoPage: true });
         } catch (err) {
           console.log(err);
         }
-      }),
-    );
+      });
   } catch (err) {
     console.log(err);
   }
@@ -228,9 +227,9 @@ const runSchema = async () => {
 };
 
 // eslint-disable-next-line no-unused-vars
-const buildCombinedTables = () => {
-  populateAPmix();
-  populateQAmix();
+const buildCombinedTables = async () => {
+  await populateAPmix();
+  await populateQAmix();
 };
 
 /** ****************************************************************************

@@ -1,6 +1,8 @@
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
+// eslint-disable-next-line no-unused-vars
+const db = require('./db/index');
 // routers
 const questions = require('./controllers/questions');
 const answers = require('./controllers/answers');
