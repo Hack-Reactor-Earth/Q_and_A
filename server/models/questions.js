@@ -7,13 +7,13 @@ const db = require('../db/index');
 
 const questionsByProductId = `
 SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported, answers FROM questionsWithAnswers
-WHERE product_id = ?`;
+WHERE product_id = ? AND reported = ? ALLOW FILTERING`;
 
 const getQuestionsByProductId = async (id, count, page) => {
   try {
     let pageCount = parseInt(page);
     const questions = await db.client.execute(
-      questionsByProductId, [id], { prepare: true, fetchSize: count * page, autoPage: true },
+      questionsByProductId, [id, false], { prepare: true, fetchSize: count * page, autoPage: true },
     );
     let start = 0;
     let stop = count;
