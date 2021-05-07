@@ -42,6 +42,11 @@ const getAnswersByQuestionId = async (id, page, count) => {
   }
 };
 
+const createAnswerByProductId = async () => {
+
+};
+
 module.exports = {
   getAnswersByQuestionId,
+  createAnswerByProductId,
 };

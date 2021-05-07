@@ -50,11 +50,34 @@ router.post('/', async (req, res) => {
   };
   try {
     const data = await questions.createQuestionByProductId(question);
-    console.log(data);
     if (data) {
       res.sendStatus(201);
     } else {
       res.status(400).json({ message: 'Unable to add question' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: `Error processing request ${err}` });
+    console.log(err);
+  }
+});
+
+/** ****************************************************************************
+  *                      Add an answer POST
+  ***************************************************************************** */
+
+router.post('/:question_id/answers', async (req, res) => {
+  const {
+    body, name, email, photos, question_id,
+  } = req.body;
+  const answer = {
+    body, name, email, photos, question_id,
+  };
+  try {
+    const data = await answers.createAnswerByProductId(answer);
+    if (data) {
+      res.sendStatus(201);
+    } else {
+      res.status(400).json({ message: 'Unable to add answer' });
     }
   } catch (err) {
     res.status(500).json({ message: `Error processing request ${err}` });

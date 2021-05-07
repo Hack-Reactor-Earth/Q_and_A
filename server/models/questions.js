@@ -1,6 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
 const db = require('../db/index');
-const { getAnswersByQuestionId } = require('./answers');
 
 /** ****************************************************************************
   *                      Queries
@@ -11,8 +9,13 @@ SELECT question_id, question_body, question_date, asker_name, question_helpfulne
 WHERE product_id = ? AND reported = ? ALLOW FILTERING`;
 
 const getLastQuestionId = `
-SELECT MAX(question_id) from questionsWithAnswers WHERE product_id = ?
+SELECT MAX(question_id) from question_ids
 `;
+
+const addQuestionId = `INSERT INTO question_ids(
+  question_id
+)
+VALUES(?)`;
 
 const createQuestion = `INSERT INTO questionsWithAnswers(
     question_id,
@@ -59,9 +62,9 @@ const getQuestionsByProductId = async (id, count, page) => {
 };
 
 const createQuestionByProductId = async (question) => {
-  console.log(question);
-  const id = await db.execute(getLastQuestionId, [question.product_id], { prepare: true });
+  const id = await db.execute(getLastQuestionId, [], { prepare: true });
   const questionId = id.rows[0]['system.max(question_id)'];
+  console.log(questionId);
   const data = await db.execute(createQuestion, [
     questionId + 1,
     question.product_id,
@@ -73,7 +76,7 @@ const createQuestionByProductId = async (question) => {
     0,
     null,
   ], { prepare: true });
-  console.log(data);
+  await db.execute(addQuestionId, [questionId + 1], {prepare: true});
   return data;
 };
 

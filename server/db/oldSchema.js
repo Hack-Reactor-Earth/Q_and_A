@@ -153,11 +153,6 @@ const insertQuestion = `INSERT INTO questionsWithAnswers(
     )
 Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-const insertQuestionId = `INSERT INTO question_ids (
-  question_id
-)
-Values(?)`;
-
 /** ****************************************************************************
   *                      Helper functions to build new tables
   ***************************************************************************** */
@@ -168,10 +163,10 @@ const populateAPmix = async () => {
     await client.eachRow(allAnswers, [], {
       prepare: true, autoPage: true, fetchSize: 100,
     }, async (n, answer) => {
-      // if (n === 99) {
-      //   hundreds++;
-      // }
-      // console.log({ answerHundreds: hundreds });
+      if (n === 99) {
+        hundreds++;
+      }
+      console.log({ answerHundreds: hundreds });
       try {
         const photos = await client.execute(
           answerPhotos, [answer.id], options,
@@ -202,10 +197,10 @@ const populateQAmix = async () => {
     let hundreds = 0;
     await client.eachRow(allQuestions, [],
       options, async (n, question) => {
-        // if (n === 99) {
-        //   hundreds++;
-        // }
-        // console.log({ answerHundreds: hundreds });
+        if (n === 99) {
+          hundreds++;
+        }
+        console.log({ answerHundreds: hundreds });
         try {
           const answers = await client.execute(
             questionAnswers, [question.id], options,
@@ -233,7 +228,7 @@ const populateQAmix = async () => {
             question.helpful,
             answersObj,
           ], options);
-          await client.execute(insertQuestionId, [question.id], options);
+          await client.execute('INSERT INTO question_ids', [question.id], options);
         } catch (err) {
           console.log(err);
         }
