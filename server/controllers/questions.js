@@ -16,6 +16,7 @@ router.get('/', async (req, res) => {
     const pages = await questions.getQuestionsByProductId(product_id, count, page);
     res.status(200).json(pages);
   } catch (err) {
+    res.status(500).json({ message: `Error processing request ${err}` });
     console.log(err);
   }
 });
@@ -31,6 +32,32 @@ router.get('/:question_id/answers', async (req, res) => {
     const pages = await answers.getAnswersByQuestionId(question_id, page, count);
     res.status(200).json(pages);
   } catch (err) {
+    res.status(500).json({ message: `Error processing request ${err}` });
+    console.log(err);
+  }
+});
+
+/** ****************************************************************************
+  *                      Add a question POST
+  ***************************************************************************** */
+
+router.post('/', async (req, res) => {
+  const {
+    body, name, email, product_id,
+  } = req.body;
+  const question = {
+    body, name, email, product_id,
+  };
+  try {
+    const data = await questions.createQuestionByProductId(question);
+    console.log(data);
+    if (data) {
+      res.sendStatus(201);
+    } else {
+      res.status(400).json({ message: 'Unable to add question' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: `Error processing request ${err}` });
     console.log(err);
   }
 });
@@ -41,10 +68,6 @@ router.get('/:question_id/answers', async (req, res) => {
 
 /** ****************************************************************************
   *                      Report question PUT
-  ***************************************************************************** */
-
-/** ****************************************************************************
-  *                      Add a question POST
   ***************************************************************************** */
 
 module.exports = router;

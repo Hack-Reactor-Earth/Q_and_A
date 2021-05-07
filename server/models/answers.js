@@ -15,7 +15,7 @@ WHERE question_id = ? AND reported = ? ALLOW FILTERING`;
 const getAnswersByQuestionId = async (id, page, count) => {
   try {
     let pageCount = parseInt(page);
-    const answers = await db.client.execute(
+    const answers = await db.execute(
       answersByQuestionId, [id, false], { prepare: true, fetchSize: count * page, autoPage: true },
     );
     let start = 0;

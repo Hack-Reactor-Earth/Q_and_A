@@ -119,8 +119,8 @@ const allAnswers = 'SELECT * FROM answers';
 const allQuestions = 'SELECT * FROM questions';
 const answerPhotos = 'SELECT * FROM answers_photos WHERE answer_id = ?';
 const questionAnswers = 'SELECT * FROM answersWithPhotos WHERE question_id = ?';
-const getAllAnswersWithPhotos = 'SELECT * FROM answersWithPhotos';
-const getAllQuestionsWithAnswers = 'SELECT * FROM questionsWithAnswers';
+// const getAllAnswersWithPhotos = 'SELECT * FROM answersWithPhotos';
+// const getAllQuestionsWithAnswers = 'SELECT * FROM questionsWithAnswers';
 // * write
 const insertAnswer = `INSERT INTO answersWithPhotos(
     answer_id,
@@ -263,4 +263,4 @@ const buildCombinedTables = async () => {
 // runSchema();
 // buildCombinedTables();
 
-module.exports = { client, getAllAnswersWithPhotos, getAllQuestionsWithAnswers };
+module.exports = client;
