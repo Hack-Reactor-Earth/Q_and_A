@@ -9,6 +9,10 @@ const questionsByProductId = `
 SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported, answers FROM questionsWithAnswers
 WHERE product_id = ? AND reported = ? ALLOW FILTERING`;
 
+/** ****************************************************************************
+  *                      Models
+  ***************************************************************************** */
+
 const getQuestionsByProductId = async (id, count, page) => {
   try {
     let pageCount = parseInt(page);

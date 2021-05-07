@@ -5,7 +5,6 @@ const bodyParser = require('body-parser');
 const db = require('./db/index');
 // routers
 const questions = require('./controllers/questions');
-const answers = require('./controllers/answers');
 
 const port = 5000;
 
@@ -21,7 +20,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
   ***************************************************************************** */
 
 app.use('/qa/questions', questions);
-app.use('/qa/answers', answers);
 
 app.get('/', async (req, res) => {
   try {
