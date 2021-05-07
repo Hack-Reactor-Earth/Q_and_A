@@ -22,7 +22,7 @@ client.connect(() => [
   console.log('app: cassandra connected'),
 ]);
 
-// const dropKeySpace = `DROP KEYSPACE IF EXISTS q_and_a`
+const dropKeySpace = 'DROP KEYSPACE IF EXISTS q_and_a';
 
 const createKeySpace = 'CREATE KEYSPACE IF NOT EXISTS q_and_a WITH REPLICATION = {\'class\':\'SimpleStrategy\', \'replication_factor\':3}';
 
@@ -69,44 +69,46 @@ const createPhotoType = `CREATE TYPE IF NOT EXISTS  photo (
 
 const createAnswerType = `CREATE TYPE IF NOT EXISTS  answer (
     id int,
-    question_id int,
     body text,
-    date_written date,
+    date date,
     answerer_name text,
-    answerer_email text,
     reported boolean,
-    helpful int,
+    helpfulness int,
     photos list<frozen<photo>>
   );`;
+
+const createAnswerObjectType = `CREATE TYPE IF NOT EXISTS answerObject (
+  id frozen<answer>
+);`;
 
 /** ****************************************************************************
   *                      Tables to merge and nest data
   ***************************************************************************** */
 const createAnswersWithPhotosTable = `CREATE TABLE IF NOT EXISTS
 answersWithPhotos (
-    id int,
+    answer_id int,
     question_id int,
     body text,
-    date_written date,
+    date date,
     answerer_name text,
     answerer_email text,
     reported boolean,
-    helpful int,
+    helpfulness int,
     photos list<frozen<photo>>,
-    PRIMARY KEY(question_id, id, date_written, helpful)
+    PRIMARY KEY(question_id, answer_id, date, helpfulness)
 );`;
 
 const createQuestionsWithAnswersTable = `CREATE TABLE IF NOT EXISTS questionsWithAnswers (
-    id int,
+    question_id int,
     product_id int,
-    body text,
-    date_written date,
+    question_body text,
+    question_date date,
     asker_name text,
     asker_email text,
     reported boolean,
-    helpful int,
-    answers list<frozen<answer>>,
-    PRIMARY KEY(product_id, id, date_written, helpful)
+    question_helpfulness int,
+    answers map<int, frozen<answer>>,
+    PRIMARY KEY(product_id, question_id, question_date, question_helpfulness)
     );`;
 
 /** ****************************************************************************
@@ -121,27 +123,27 @@ const getAllAnswersWithPhotos = 'SELECT * FROM answersWithPhotos';
 const getAllQuestionsWithAnswers = 'SELECT * FROM questionsWithAnswers';
 // * write
 const insertAnswer = `INSERT INTO answersWithPhotos(
-    id,
+    answer_id,
     question_id,
     body,
-    date_written,
+    date,
     answerer_name,
     answerer_email,
     reported,
-    helpful,
+    helpfulness,
     photos
    )
    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
 const insertQuestion = `INSERT INTO questionsWithAnswers(
-    id,
+    question_id,
     product_id,
-    body,
-    date_written,
+    question_body,
+    question_date,
     asker_name,
     asker_email,
     reported,
-    helpful,
+    question_helpfulness,
     answers
     )
 Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -151,12 +153,17 @@ Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   ***************************************************************************** */
 const populateAPmix = async () => {
   try {
+    let hundreds = 0;
     await client.eachRow(allAnswers, [], {
-      prepare: true, autoPage: true, fetchSize: 1000,
+      prepare: true, autoPage: true, fetchSize: 100,
     }, async (n, answer) => {
+      if (n === 99) {
+        hundreds++;
+      }
+      console.log({ answerHundreds: hundreds });
       try {
         const photos = await client.execute(
-          answerPhotos, [answer.id], { prepare: true, autoPage: true, fetchSize: 1000 },
+          answerPhotos, [answer.id], { prepare: true, autoPage: true, fetchSize: 100 },
         );
         // Insert all answer data into answersWithPhotos table with photos array
         await client.execute(insertAnswer, [
@@ -180,22 +187,39 @@ const populateAPmix = async () => {
 };
 const populateQAmix = async () => {
   try {
+    let hundreds = 0;
     await client.eachRow(allQuestions, [],
-      { prepare: true, autoPage: true, fetchSize: 1000 }, async (n, question) => {
+      { prepare: true, autoPage: true, fetchSize: 100 }, async (n, question) => {
+        if (n === 99) {
+          hundreds++;
+        }
+        console.log({ answerHundreds: hundreds });
         try {
           const answers = await client.execute(
-            questionAnswers, [question.id], { prepare: true, fetchSize: 1000, autoPage: true },
+            questionAnswers, [question.id], { prepare: true, fetchSize: 100, autoPage: true },
           );
+          const answersObj = {};
+          // create the object of answers for each insert
+          answers.rows.forEach(async (a) => {
+            answersObj[a.answer_id] = {
+              id: a.answer_id,
+              body: a.body,
+              date: a.date.date,
+              answerer_name: a.answerer_name,
+              helpfulness: a.helpfulness,
+              photos: a.photos,
+            };
+          });
           await client.execute(insertQuestion, [
             question.id,
             question.product_id,
             question.body,
-            question.date_written,
+            question.date_written.date,
             question.asker_name,
             question.asker_email,
             question.reported,
             question.helpful,
-            answers.rows,
+            answersObj,
           ], { prepare: true, autoPage: true });
         } catch (err) {
           console.log(err);
@@ -212,13 +236,14 @@ const populateQAmix = async () => {
 // eslint-disable-next-line no-unused-vars
 const runSchema = async () => {
   try {
-  // await client.execute(dropKeySpace, [])
+    await client.execute(dropKeySpace, []);
     await client.execute(createKeySpace, []);
     await client.execute(createQuestionsTable, []);
     await client.execute(createAnswersTable, []);
     await client.execute(createAnswersPhotosTable, []);
     await client.execute(createPhotoType, []);
     await client.execute(createAnswerType, []);
+    await client.execute(createAnswerObjectType, []);
     await client.execute(createAnswersWithPhotosTable, []);
     await client.execute(createQuestionsWithAnswersTable, []);
   } catch (err) {
