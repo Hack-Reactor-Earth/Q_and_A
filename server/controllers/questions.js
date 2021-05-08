@@ -108,4 +108,19 @@ router.put('/:question_id/helpful', async (req, res) => {
   *                      Report question PUT
   ***************************************************************************** */
 
+router.put('/:question_id/report', async (req, res) => {
+  const { question_id } = req.params;
+  try {
+    const update = await questions.reportQuestion(question_id);
+    if (update) {
+      res.sendStatus(204);
+    } else {
+      res.status(400).json({ message: 'Error updating' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: `Error processing request ${err}` });
+    console.log(err);
+  }
+});
+
 module.exports = router;

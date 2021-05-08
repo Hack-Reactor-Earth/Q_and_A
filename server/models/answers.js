@@ -7,7 +7,7 @@ const db = require('../db/index');
 const answersByQuestionId = `
 SELECT answer_id, body, date, answerer_name, helpfulness, photos
 FROM answers
-WHERE question_id = ? AND reported = ?`;
+WHERE question_id = ?`;
 
 const getLastAnswerId = `
 SELECT last_id FROM id_counters
@@ -55,7 +55,7 @@ WHERE answer_id = ?`;
 
 const getQuestionAnswers = `
 SELECT * FROM answers
-WHERE question_id = ? AND reported = false`;
+WHERE question_id = ?`;
 
 const getQuestion = `
 SELECT * FROM questions
@@ -67,7 +67,6 @@ SET answers = ?
 WHERE question_id = ?
 AND product_id = ?
 AND question_date = ?
-AND reported = false
 `;
 
 const getAnswer = `
@@ -81,7 +80,6 @@ SET helpfulness = ?
 WHERE answer_id = ?
 AND question_id = ?
 AND date = ?
-AND reported = false
 `;
 
 // const updateQuestion = ``
@@ -136,7 +134,7 @@ const getAnswersByQuestionId = async (id, page, count) => {
   try {
     let pageCount = parseInt(page);
     const answers = await db.execute(
-      answersByQuestionId, [id, false], { prepare: true, fetchSize: count * page, autoPage: true },
+      answersByQuestionId, [id], { prepare: true, fetchSize: count * page, autoPage: true },
     );
     // split the answers up by page and count from request
     let start = 0;
@@ -164,7 +162,6 @@ const getAnswersByQuestionId = async (id, page, count) => {
 };
 
 const insertImages = async (images, answerId) => {
-  console.log(images);
   const pId = await db.execute(getLastPhotoId, [], { prepare: true });
   const photoId = parseInt(pId.rows[0].last_id);
   const img1 = images[0];
@@ -172,7 +169,6 @@ const insertImages = async (images, answerId) => {
   const img3 = images[2];
   const img4 = images[3];
   const img5 = images[4];
-  // console.log(img1, img2, img3, img4, img5);
   try {
     img1 && await db.execute(createPhoto, [
       photoId,
@@ -219,7 +215,6 @@ const createAnswerByProductId = async (answer) => {
     // store the images if there are any
     await insertImages(answer.photos, answerId);
     const photos = await db.execute(getAnswersPhotos, [answerId], { prepare: true });
-    console.log(photos.rows);
     // store the answer
     await db.execute(createAnswer, [
       answerId,

@@ -7,8 +7,7 @@ const db = require('../db/index');
 const questionsByProductId = `
 SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported, answers
 FROM questions
-WHERE product_id = ?
-AND reported = ?`;
+WHERE product_id = ?`;
 
 const getLastQuestionId = `
 SELECT last_id FROM id_counters
@@ -34,6 +33,27 @@ INSERT INTO questions(
     )
 Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
+const createReport = `
+INSERT INTO reported_questions(
+    question_id,
+    product_id,
+    question_body,
+    question_date,
+    asker_name,
+    asker_email,
+    reported,
+    question_helpfulness,
+    answers
+    )
+Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+const deleteReported = `
+DELETE FROM questions
+WHERE question_id = ?
+AND product_id = ?
+AND question_date = ?
+`;
+
 const getQuestion = `
 SELECT * FROM questions
 WHERE question_id = ?`;
@@ -44,12 +64,40 @@ SET question_helpfulness = ?
 WHERE question_id = ?
 AND product_id = ?
 AND question_date = ?
-AND reported = false
 `;
 
 /** ****************************************************************************
   *                      Models
   ***************************************************************************** */
+
+const reportQuestion = async (question_id) => {
+  try {
+    const question = await db.execute(getQuestion, [question_id], { prepare: true });
+    const q = question.rows[0];
+    const result = await db.execute(createReport, [
+      q.question_id,
+      q.product_id,
+      q.question_body,
+      q.question_date,
+      q.asker_name,
+      q.asker_email,
+      true,
+      q.question_helpfulness,
+      q.answers,
+    ], { prepare: true });
+    let deleteResult;
+    if (result) {
+      deleteResult = await db.execute(deleteReported, [
+        question_id,
+        q.product_id,
+        q.question_date,
+      ], { prepare: true });
+    }
+    return deleteResult;
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 const markQuestionAsHelpful = async (question_id) => {
   try {
@@ -72,7 +120,7 @@ const getQuestionsByProductId = async (id, count, page) => {
   try {
     let pageCount = parseInt(page);
     const questions = await db.execute(
-      questionsByProductId, [id, false], { prepare: true, fetchSize: count * page, autoPage: true },
+      questionsByProductId, [id], { prepare: true, fetchSize: count * page, autoPage: true },
     );
     let start = 0;
     let stop = count;
@@ -118,4 +166,5 @@ module.exports = {
   getQuestionsByProductId,
   createQuestionByProductId,
   markQuestionAsHelpful,
+  reportQuestion,
 };

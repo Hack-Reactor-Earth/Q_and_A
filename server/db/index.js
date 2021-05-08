@@ -100,8 +100,24 @@ const createAnswersWithPhotosTable = `
   reported boolean,
   helpfulness int,
   photos list<frozen<photo>>,
-  PRIMARY KEY((question_id, reported), answer_id, date)
+  PRIMARY KEY(question_id, answer_id, date)
   );`;
+
+const createReportedAnswersTable = `
+  CREATE TABLE IF NOT EXISTS
+  reported_answers (
+  answer_id int,
+  question_id int,
+  body text,
+  date date,
+  answerer_name text,
+  answerer_email text,
+  reported boolean,
+  helpfulness int,
+  photos list<frozen<photo>>,
+  PRIMARY KEY(question_id, answer_id, date)
+  );
+`;
 
 const createAnswersIdIndex = `
   CREATE INDEX answer_idx
@@ -119,7 +135,21 @@ const createQuestionsWithAnswersTable = `
   reported boolean,
   question_helpfulness int,
   answers map<int, frozen<answer>>,
-  PRIMARY KEY((product_id, reported), question_id, question_date)
+  PRIMARY KEY(product_id, question_id, question_date)
+  );`;
+
+const createReportedQuestionsTable = `
+  CREATE TABLE IF NOT EXISTS reported_questions (
+  question_id int,
+  product_id int,
+  question_body text,
+  question_date date,
+  asker_name text,
+  asker_email text,
+  reported boolean,
+  question_helpfulness int,
+  answers map<int, frozen<answer>>,
+  PRIMARY KEY(product_id, question_id, question_date)
   );`;
 
 const createQuestionsIdIndex = `
@@ -160,7 +190,7 @@ const answerPhotos = `
 
 const questionAnswers = `
   SELECT * FROM answers
-  WHERE question_id = ? AND reported = false`;
+  WHERE question_id = ?`;
 
 // * write
 const insertAnswer = `
@@ -310,7 +340,9 @@ const runSchema = async () => {
     await client.execute(createPhotoType, []);
     await client.execute(createAnswerType, []);
     await client.execute(createAnswersWithPhotosTable, []);
+    await client.execute(createReportedAnswersTable, []);
     await client.execute(createQuestionsWithAnswersTable, []);
+    await client.execute(createReportedQuestionsTable, []);
     await client.execute(createQuestionsIdIndex, []);
     await client.execute(createAnswersIdIndex, []);
     await client.execute(createCountersTable, []);
