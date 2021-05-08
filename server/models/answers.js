@@ -49,6 +49,27 @@ photos
 )
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
+const createReport = `
+INSERT INTO reported_answers(
+answer_id,
+question_id,
+body,
+date,
+answerer_name,
+answerer_email,
+reported,
+helpfulness,
+photos
+)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+const deleteReported = `
+DELETE FROM answers
+WHERE answer_id = ?
+AND question_id = ?
+AND date = ?
+`;
+
 const getAnswersPhotos = `
 SELECT * FROM answers_photos
 WHERE answer_id = ?`;
@@ -87,6 +108,59 @@ AND date = ?
 /** ****************************************************************************
   *                      Models
   ***************************************************************************** */
+
+const reportAnswer = async (answer_id) => {
+  try {
+    const answer = await db.execute(getAnswer, [answer_id], { prepare: true });
+    const a = answer.rows[0];
+    const result = await db.execute(createReport, [
+      a.answer_id,
+      a.question_id,
+      a.body,
+      a.date,
+      a.answerer_name,
+      a.answerer_email,
+      true,
+      a.helpfulness,
+      a.photos,
+    ], { prepare: true });
+    let deleteResult;
+    if (result) {
+      deleteResult = await db.execute(deleteReported, [
+        answer_id,
+        a.question_id,
+        a.date,
+      ], { prepare: true });
+    }
+    // update the question
+    const answers = await db.execute(
+      getQuestionAnswers, [answer.rows[0].question_id], { prepare: true },
+    );
+    // return data;
+    const answersObj = {};
+    // create the object of answers
+    answers.rows.forEach(async (a) => {
+      answersObj[a.answer_id] = {
+        id: a.answer_id,
+        body: a.body,
+        date: a.date.date,
+        answerer_name: a.answerer_name,
+        helpfulness: a.helpfulness,
+        photos: a.photos,
+      };
+    });
+    const question = await db.execute(getQuestion, [a.question_id], { prepare: true });
+    await db.execute(updateQuestion, [
+      answersObj,
+      a.question_id,
+      question.rows[0].product_id,
+      question.rows[0].question_date,
+    ], { prepare: true });
+    return deleteResult;
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 const markAnswerAsHelpful = async (answer_id) => {
   try {
@@ -259,4 +333,5 @@ module.exports = {
   getAnswersByQuestionId,
   createAnswerByProductId,
   markAnswerAsHelpful,
+  reportAnswer,
 };
