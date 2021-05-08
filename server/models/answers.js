@@ -5,30 +5,38 @@ const db = require('../db/index');
   ***************************************************************************** */
 
 const answersByQuestionId = `
-SELECT answer_id, body, date, answerer_name, helpfulness, photos FROM answersWithPhotos
-WHERE question_id = ? AND reported = ? ALLOW FILTERING`;
+SELECT answer_id, body, date, answerer_name, helpfulness, photos
+FROM answers
+WHERE question_id = ? AND reported = ?`;
 
 const getLastAnswerId = `
-SELECT MAX(answer_id) FROM answer_ids
+SELECT last_id FROM id_counters
+WHERE table_name = 'answers'
 `;
-const addAnswerId = `INSERT INTO answer_ids(
-answer_id
-)
-VALUES(?)`;
+const addAnswerId = `
+UPDATE id_counters
+SET last_id = last_id + 1
+WHERE table_name = 'answers'`;
+
 const getLastPhotoId = `
-SELECT MAX(photo_id) FROM photo_ids
+SELECT last_id FROM id_counters
+WHERE table_name = 'photos'
 `;
-const addPhotoId = `INSERT INTO photo_ids(
-photo_id
-)
-VALUES(?)`;
-const createPhoto = `INSERT INTO answers_photos(
+const addPhotoId = `
+UPDATE id_counters
+SET last_id = last_id + 1
+WHERE table_name = 'photos'`;
+
+const createPhoto = `
+INSERT INTO answers_photos(
   id,
   answer_id,
   url
 )
 VALUES(?, ?, ?)`;
-const createAnswer = `INSERT INTO answersWithPhotos(
+
+const createAnswer = `
+INSERT INTO answers(
 answer_id,
 question_id,
 body,
@@ -41,17 +49,26 @@ photos
 )
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-const getAnswersPhotos = 'SELECT * FROM answers_photos WHERE answer_id = ?';
-const getQuestionAnswers = 'SELECT * FROM answersWithPhotos WHERE question_id = ?';
+const getAnswersPhotos = `
+SELECT * FROM answers_photos
+WHERE answer_id = ?`;
+
+const getQuestionAnswers = `
+SELECT * FROM answers
+WHERE question_id = ? AND reported = false`;
+
 const getQuestion = `
-SELECT * FROM questionsWithAnswers WHERE question_id = ? ALLOW FILTERING`;
+SELECT * FROM questions
+WHERE question_id = ?`;
+
 const updateQuestion = `
-UPDATE questionsWithAnswers
-SET answers = ? WHERE
-question_id = ?
-and product_id = ?
-and question_date = ?
-and question_helpfulness = ?
+UPDATE questions
+SET answers = ?
+WHERE question_id = ?
+AND product_id = ?
+AND question_date = ?
+AND question_helpfulness = ?
+AND reported = false
 `;
 
 // const updateQuestion = ``
@@ -66,6 +83,7 @@ const getAnswersByQuestionId = async (id, page, count) => {
     const answers = await db.execute(
       answersByQuestionId, [id, false], { prepare: true, fetchSize: count * page, autoPage: true },
     );
+    // split the answers up by page and count from request
     let start = 0;
     let stop = count;
     const pages = [];
@@ -92,7 +110,7 @@ const getAnswersByQuestionId = async (id, page, count) => {
 
 const insertImages = async (images, answerId) => {
   const pId = await db.execute(getLastPhotoId, [], { prepare: true });
-  const photoId = pId.rows[0]['system.max(photo_id)'];
+  const photoId = pId.rows[0].last_id;
   const img1 = images[0];
   const img2 = images[1];
   const img3 = images[2];
@@ -100,35 +118,35 @@ const insertImages = async (images, answerId) => {
   const img5 = images[4];
   try {
     img1 && await db.execute(createPhoto, [
-      photoId + 1,
+      photoId,
       answerId,
       img1,
     ], { prepare: true });
     img2 && await db.execute(createPhoto, [
-      photoId + 2,
+      photoId,
       answerId,
       img2,
     ], { prepare: true });
     img3 && await db.execute(createPhoto, [
-      photoId + 3,
+      photoId,
       answerId,
       img3,
     ], { prepare: true });
     img4 && await db.execute(createPhoto, [
-      photoId + 4,
+      photoId,
       answerId,
       img4,
     ], { prepare: true });
     img5 && await db.execute(createPhoto, [
-      photoId + 5,
+      photoId,
       answerId,
       img5,
     ], { prepare: true });
-    img1 && await db.execute(addPhotoId, [photoId + 1], { prepare: true });
-    img2 && await db.execute(addPhotoId, [photoId + 2], { prepare: true });
-    img3 && await db.execute(addPhotoId, [photoId + 3], { prepare: true });
-    img4 && await db.execute(addPhotoId, [photoId + 4], { prepare: true });
-    img5 && await db.execute(addPhotoId, [photoId + 5], { prepare: true });
+    img1 && await db.execute(addPhotoId, [], { prepare: true });
+    img2 && await db.execute(addPhotoId, [], { prepare: true });
+    img3 && await db.execute(addPhotoId, [], { prepare: true });
+    img4 && await db.execute(addPhotoId, [], { prepare: true });
+    img5 && await db.execute(addPhotoId, [], { prepare: true });
   } catch (err) {
     console.log(err);
   }
@@ -140,13 +158,13 @@ const createAnswerByProductId = async (answer) => {
 
     // get the next available answerId
     const id = await db.execute(getLastAnswerId, [], { prepare: true });
-    const answerId = id.rows[0]['system.max(answer_id)'];
+    const answerId = id.rows[0].last_id;
     // store the images if there are any
     await insertImages(answer.photos, answerId);
     const photos = await db.execute(getAnswersPhotos, [answerId], { prepare: true });
     // store the answer
     await db.execute(createAnswer, [
-      answerId + 1,
+      answerId,
       answer.question_id,
       answer.body,
       new Date(),
@@ -156,7 +174,7 @@ const createAnswerByProductId = async (answer) => {
       0,
       photos.rows,
     ], { prepare: true });
-    await db.execute(addAnswerId, [answerId + 1], { prepare: true });
+    await db.execute(addAnswerId, [], { prepare: true });
     // update the question
     const answers = await db.execute(getQuestionAnswers, [answer.question_id], { prepare: true });
     // return data;

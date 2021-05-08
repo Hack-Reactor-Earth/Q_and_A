@@ -5,19 +5,23 @@ const db = require('../db/index');
   ***************************************************************************** */
 
 const questionsByProductId = `
-SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported, answers FROM questionsWithAnswers
-WHERE product_id = ? AND reported = ? ALLOW FILTERING`;
+SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported, answers
+FROM questions
+WHERE product_id = ?
+AND reported = ?`;
 
 const getLastQuestionId = `
-SELECT MAX(question_id) from question_ids
+SELECT last_id FROM id_counters
+WHERE table_name = 'questions'
 `;
 
-const addQuestionId = `INSERT INTO question_ids(
-  question_id
-)
-VALUES(?)`;
+const addQuestionId = `
+UPDATE id_counters
+SET last_id = last_id + 1
+WHERE table_name = 'questions'`;
 
-const createQuestion = `INSERT INTO questionsWithAnswers(
+const createQuestion = `
+INSERT INTO questions(
     question_id,
     product_id,
     question_body,
@@ -63,9 +67,9 @@ const getQuestionsByProductId = async (id, count, page) => {
 
 const createQuestionByProductId = async (question) => {
   const id = await db.execute(getLastQuestionId, [], { prepare: true });
-  const questionId = id.rows[0]['system.max(question_id)'];
+  const questionId = id.rows[0].last_id;
   const data = await db.execute(createQuestion, [
-    questionId + 1,
+    questionId,
     question.product_id,
     question.body,
     new Date(),
@@ -75,7 +79,7 @@ const createQuestionByProductId = async (question) => {
     0,
     null,
   ], { prepare: true });
-  await db.execute(addQuestionId, [questionId + 1], { prepare: true });
+  await db.execute(addQuestionId, [], { prepare: true });
   return data;
 };
 
