@@ -70,11 +70,67 @@ AND question_date = ?
 AND reported = false
 `;
 
+const getAnswer = `
+SELECT * FROM answers
+WHERE answer_id = ?;
+`;
+
+const markHelpful = `
+UPDATE answers
+SET helpfulness = ?
+WHERE answer_id = ?
+AND question_id = ?
+AND date = ?
+AND reported = false
+`;
+
 // const updateQuestion = ``
 
 /** ****************************************************************************
   *                      Models
   ***************************************************************************** */
+
+const markAnswerAsHelpful = async (answer_id) => {
+  try {
+    const answer = await db.execute(getAnswer, [answer_id], { prepare: true });
+    const newCount = 1
+     + parseInt(answer.rows[0].helpfulness);
+    await db.execute(markHelpful, [
+      newCount,
+      answer_id,
+      answer.rows[0].question_id,
+      answer.rows[0].date,
+    ], { prepare: true });
+    // update the question
+    const answers = await db.execute(
+      getQuestionAnswers, [answer.rows[0].question_id], { prepare: true },
+    );
+    // return data;
+    const answersObj = {};
+    // create the object of answers
+    answers.rows.forEach(async (a) => {
+      answersObj[a.answer_id] = {
+        id: a.answer_id,
+        body: a.body,
+        date: a.date.date,
+        answerer_name: a.answerer_name,
+        helpfulness: a.helpfulness,
+        photos: a.photos,
+      };
+    });
+    const question = await db.execute(getQuestion, [answer.rows[0].question_id], { prepare: true });
+    const result = await db.execute(updateQuestion, [
+      answersObj,
+      answer.rows[0].question_id,
+      question.rows[0].product_id,
+      question.rows[0].question_date,
+    ], { prepare: true });
+
+    return result;
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 const getAnswersByQuestionId = async (id, page, count) => {
   try {
@@ -204,4 +260,5 @@ const createAnswerByProductId = async (answer) => {
 module.exports = {
   getAnswersByQuestionId,
   createAnswerByProductId,
+  markAnswerAsHelpful,
 };

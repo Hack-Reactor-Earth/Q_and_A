@@ -103,6 +103,11 @@ const createAnswersWithPhotosTable = `
   PRIMARY KEY((question_id, reported), answer_id, date)
   );`;
 
+const createAnswersIdIndex = `
+  CREATE INDEX answer_idx
+  ON answers (answer_id)
+  `;
+
 const createQuestionsWithAnswersTable = `
   CREATE TABLE IF NOT EXISTS questions (
   question_id int,
@@ -307,6 +312,7 @@ const runSchema = async () => {
     await client.execute(createAnswersWithPhotosTable, []);
     await client.execute(createQuestionsWithAnswersTable, []);
     await client.execute(createQuestionsIdIndex, []);
+    await client.execute(createAnswersIdIndex, []);
     await client.execute(createCountersTable, []);
     await client.execute(initializePhotoCounter, []);
     await client.execute(createProductByQuestionsIdTable, []);

@@ -91,10 +91,13 @@ router.post('/:question_id/answers', async (req, res) => {
 
 router.put('/:question_id/helpful', async (req, res) => {
   const { question_id } = req.params;
-  console.log(question_id);
   try {
     const update = await questions.markQuestionAsHelpful(question_id);
-    res.status(200).json(update);
+    if (update) {
+      res.sendStatus(204);
+    } else {
+      res.status(400).json({ message: 'Error updating' });
+    }
   } catch (err) {
     res.status(500).json({ message: `Error processing request ${err}` });
     console.log(err);
