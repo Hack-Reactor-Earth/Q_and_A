@@ -164,13 +164,15 @@ const getAnswersByQuestionId = async (id, page, count) => {
 };
 
 const insertImages = async (images, answerId) => {
+  console.log(images);
   const pId = await db.execute(getLastPhotoId, [], { prepare: true });
-  const photoId = pId.rows[0].last_id;
+  const photoId = parseInt(pId.rows[0].last_id);
   const img1 = images[0];
   const img2 = images[1];
   const img3 = images[2];
   const img4 = images[3];
   const img5 = images[4];
+  // console.log(img1, img2, img3, img4, img5);
   try {
     img1 && await db.execute(createPhoto, [
       photoId,
@@ -178,22 +180,22 @@ const insertImages = async (images, answerId) => {
       img1,
     ], { prepare: true });
     img2 && await db.execute(createPhoto, [
-      photoId,
+      photoId + 1,
       answerId,
       img2,
     ], { prepare: true });
     img3 && await db.execute(createPhoto, [
-      photoId,
+      photoId + 2,
       answerId,
       img3,
     ], { prepare: true });
     img4 && await db.execute(createPhoto, [
-      photoId,
+      photoId + 3,
       answerId,
       img4,
     ], { prepare: true });
     img5 && await db.execute(createPhoto, [
-      photoId,
+      photoId + 4,
       answerId,
       img5,
     ], { prepare: true });
@@ -217,6 +219,7 @@ const createAnswerByProductId = async (answer) => {
     // store the images if there are any
     await insertImages(answer.photos, answerId);
     const photos = await db.execute(getAnswersPhotos, [answerId], { prepare: true });
+    console.log(photos.rows);
     // store the answer
     await db.execute(createAnswer, [
       answerId,
