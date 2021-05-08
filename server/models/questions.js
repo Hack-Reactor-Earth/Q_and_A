@@ -64,7 +64,6 @@ const getQuestionsByProductId = async (id, count, page) => {
 const createQuestionByProductId = async (question) => {
   const id = await db.execute(getLastQuestionId, [], { prepare: true });
   const questionId = id.rows[0]['system.max(question_id)'];
-  console.log(questionId);
   const data = await db.execute(createQuestion, [
     questionId + 1,
     question.product_id,
@@ -76,7 +75,7 @@ const createQuestionByProductId = async (question) => {
     0,
     null,
   ], { prepare: true });
-  await db.execute(addQuestionId, [questionId + 1], {prepare: true});
+  await db.execute(addQuestionId, [questionId + 1], { prepare: true });
   return data;
 };
 

@@ -20,5 +20,6 @@ module.exports = {
     'consistent-return': 'off',
     radix: 'off',
     'no-plusplus': 'off',
+    'no-unused-expressions': 'off',
   },
 };

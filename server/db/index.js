@@ -22,7 +22,7 @@ client.connect(() => [
   console.log('app: cassandra connected'),
 ]);
 
-const dropKeySpace = 'DROP KEYSPACE IF EXISTS q_and_a';
+// const dropKeySpace = 'DROP KEYSPACE IF EXISTS q_and_a';
 
 const createKeySpace = 'CREATE KEYSPACE IF NOT EXISTS q_and_a WITH REPLICATION = {\'class\':\'SimpleStrategy\', \'replication_factor\':3}';
 
@@ -115,6 +115,14 @@ const createQuestionByIdTable = `CREATE TABLE IF NOT EXISTS question_ids (
   question_id int,
   PRIMARY KEY(question_id)
 );`;
+const createAnswersByIdTable = `CREATE TABLE IF NOT EXISTS answer_ids (
+  answer_id int,
+  PRIMARY KEY(answer_id)
+);`;
+const createPhotoByIdTable = `CREATE TABLE IF NOT EXISTS photo_ids (
+  photo_id int,
+  PRIMARY KEY(photo_id)
+);`;
 
 /** ****************************************************************************
   *                      Queries
@@ -124,8 +132,6 @@ const allAnswers = 'SELECT * FROM answers';
 const allQuestions = 'SELECT * FROM questions';
 const answerPhotos = 'SELECT * FROM answers_photos WHERE answer_id = ?';
 const questionAnswers = 'SELECT * FROM answersWithPhotos WHERE question_id = ?';
-const getAllAnswersWithPhotos = 'SELECT * FROM answersWithPhotos';
-const getAllQuestionsWithAnswers = 'SELECT * FROM questionsWithAnswers';
 // * write
 const insertAnswer = `INSERT INTO answersWithPhotos(
     answer_id,
@@ -157,6 +163,14 @@ const insertQuestionId = `INSERT INTO question_ids (
   question_id
 )
 Values(?)`;
+const insertAnswerId = `INSERT INTO answer_ids (
+  answer_id
+)
+Values(?)`;
+const insertPhotoId = `INSERT INTO photo_ids (
+  photo_id
+)
+Values(?)`;
 
 /** ****************************************************************************
   *                      Helper functions to build new tables
@@ -164,7 +178,7 @@ Values(?)`;
 const options = { prepare: true, fetchSize: 100, autoPage: true };
 const populateAPmix = async () => {
   try {
-    let hundreds = 0;
+    // const hundreds = 0;
     await client.eachRow(allAnswers, [], {
       prepare: true, autoPage: true, fetchSize: 100,
     }, async (n, answer) => {
@@ -188,6 +202,7 @@ const populateAPmix = async () => {
           answer.helpful,
           photos.rows,
         ], options);
+        await client.execute(insertAnswerId, [answer.id], options);
       } catch (err) {
         console.log(err);
       }
@@ -199,7 +214,7 @@ const populateAPmix = async () => {
 
 const populateQAmix = async () => {
   try {
-    let hundreds = 0;
+    // const hundreds = 0;
     await client.eachRow(allQuestions, [],
       options, async (n, question) => {
         // if (n === 99) {
@@ -260,6 +275,8 @@ const runSchema = async () => {
     await client.execute(createAnswersWithPhotosTable, []);
     await client.execute(createQuestionsWithAnswersTable, []);
     await client.execute(createQuestionByIdTable, []);
+    await client.execute(createAnswersByIdTable, []);
+    await client.execute(createPhotoByIdTable, []);
   } catch (err) {
     console.log(err);
   }
@@ -275,6 +292,6 @@ const buildCombinedTables = async () => {
   *                      Run helpers
   ***************************************************************************** */
 // runSchema();
-// buildCombinedTables();
+buildCombinedTables();
 
 module.exports = client;
