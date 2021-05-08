@@ -67,7 +67,6 @@ SET answers = ?
 WHERE question_id = ?
 AND product_id = ?
 AND question_date = ?
-AND question_helpfulness = ?
 AND reported = false
 `;
 
@@ -195,7 +194,6 @@ const createAnswerByProductId = async (answer) => {
       answer.question_id,
       question.rows[0].product_id,
       question.rows[0].question_date,
-      question.rows[0].question_helpfulness,
     ], { prepare: true });
     return result;
   } catch (err) {

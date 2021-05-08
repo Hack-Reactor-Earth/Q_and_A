@@ -100,7 +100,7 @@ const createAnswersWithPhotosTable = `
   reported boolean,
   helpfulness int,
   photos list<frozen<photo>>,
-  PRIMARY KEY((question_id, reported), answer_id, date, helpfulness)
+  PRIMARY KEY((question_id, reported), answer_id, date)
   );`;
 
 const createQuestionsWithAnswersTable = `
@@ -114,7 +114,7 @@ const createQuestionsWithAnswersTable = `
   reported boolean,
   question_helpfulness int,
   answers map<int, frozen<answer>>,
-  PRIMARY KEY((product_id, reported), question_id, question_date, question_helpfulness)
+  PRIMARY KEY((product_id, reported), question_id, question_date)
   );`;
 
 const createQuestionsIdIndex = `
@@ -197,6 +197,12 @@ const updateCounter = `
   UPDATE id_counters
   SET last_id = last_id + 1
   WHERE table_name = ?`;
+
+const initializePhotoCounter = `
+  UPDATE id_counters
+  SET last_id = last_id + 1
+  WHERE table_name = 'photos'
+`;
 
 /** ****************************************************************************
   *                      Helper functions to build new tables
@@ -302,6 +308,7 @@ const runSchema = async () => {
     await client.execute(createQuestionsWithAnswersTable, []);
     await client.execute(createQuestionsIdIndex, []);
     await client.execute(createCountersTable, []);
+    await client.execute(initializePhotoCounter, []);
     await client.execute(createProductByQuestionsIdTable, []);
   } catch (err) {
     console.log(err);

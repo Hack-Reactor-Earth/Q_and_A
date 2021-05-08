@@ -33,9 +33,41 @@ INSERT INTO questions(
     answers
     )
 Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+const getQuestion = `
+SELECT * FROM questions
+WHERE question_id = ?`;
+
+const markHelpful = `
+UPDATE questions
+SET question_helpfulness = ?
+WHERE question_id = ?
+AND product_id = ?
+AND question_date = ?
+AND reported = false
+`;
+
 /** ****************************************************************************
   *                      Models
   ***************************************************************************** */
+
+const markQuestionAsHelpful = async (question_id) => {
+  try {
+    const question = await db.execute(getQuestion, [question_id], { prepare: true });
+    const newCount = 1
+     + parseInt(question.rows[0].question_helpfulness);
+    console.log(newCount);
+    const result = await db.execute(markHelpful, [
+      newCount,
+      question_id,
+      question.rows[0].product_id,
+      question.rows[0].question_date,
+    ], { prepare: true });
+    return result;
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 const getQuestionsByProductId = async (id, count, page) => {
   try {
@@ -86,4 +118,5 @@ const createQuestionByProductId = async (question) => {
 module.exports = {
   getQuestionsByProductId,
   createQuestionByProductId,
+  markQuestionAsHelpful,
 };

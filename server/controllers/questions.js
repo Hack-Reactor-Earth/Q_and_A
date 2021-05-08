@@ -89,6 +89,18 @@ router.post('/:question_id/answers', async (req, res) => {
   *                      Mark question as helpful PUT
   ***************************************************************************** */
 
+router.put('/:question_id/helpful', async (req, res) => {
+  const { question_id } = req.params;
+  console.log(question_id);
+  try {
+    const update = await questions.markQuestionAsHelpful(question_id);
+    res.status(200).json(update);
+  } catch (err) {
+    res.status(500).json({ message: `Error processing request ${err}` });
+    console.log(err);
+  }
+});
+
 /** ****************************************************************************
   *                      Report question PUT
   ***************************************************************************** */
