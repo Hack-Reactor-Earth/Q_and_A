@@ -67,8 +67,9 @@ router.post('/', async (req, res) => {
 
 router.post('/:question_id/answers', async (req, res) => {
   const {
-    body, name, email, photos, question_id,
+    body, name, email, photos,
   } = req.body;
+  const { question_id } = req.params;
   const answer = {
     body, name, email, photos, question_id,
   };

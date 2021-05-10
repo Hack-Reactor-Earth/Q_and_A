@@ -139,14 +139,14 @@ const reportAnswer = async (answer_id) => {
     // return data;
     const answersObj = {};
     // create the object of answers
-    answers.rows.forEach(async (a) => {
-      answersObj[a.answer_id] = {
-        id: a.answer_id,
-        body: a.body,
-        date: a.date.date,
-        answerer_name: a.answerer_name,
-        helpfulness: a.helpfulness,
-        photos: a.photos,
+    answers.rows.forEach(async (ans) => {
+      answersObj[ans.answer_id] = {
+        id: ans.answer_id,
+        body: ans.body,
+        date: ans.date.date,
+        answerer_name: ans.answerer_name,
+        helpfulness: ans.helpfulness,
+        photos: ans.photos,
       };
     });
     const question = await db.execute(getQuestion, [a.question_id], { prepare: true });
