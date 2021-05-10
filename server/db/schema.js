@@ -18,7 +18,6 @@ const runSchema = async () => {
     await client.execute(queries.createAnswersIdIndex, []);
     await client.execute(queries.createCountersTable, []);
     await client.execute(queries.initializePhotoCounter, []);
-    await client.execute(queries.createProductByQuestionsIdTable, []);
   } catch (err) {
     console.log(err);
   }

@@ -3,10 +3,9 @@
 
 QUERIES FOR COPYING CSV DATA TO table
 
-copy old_questions (id, product_id, body, date_written, asker_name, asker_email, reported, helpful) from '../hackreactor/SDC/Q_and_A/data/questions.csv ' with header = true and numprocesses=8 and chunksize=5000 and maxrows=10;
+copy old_questions (id, product_id, body, date_written, asker_name, asker_email, reported, helpful) from '../hackreactor/SDC/Q_and_A/data/questions.csv ' with header = true and numprocesses=8 and chunksize=5000 and maxrows=100;
 
-copy old_answers (id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) from '../hackreactor/SDC/Q_and_A/data/answers.csv' with header = true and numprocesses=8 and chunksize=5000 and maxrows=10;
+copy old_answers (id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) from '../hackreactor/SDC/Q_and_A/data/answers.csv' with header = true and numprocesses=8 and chunksize=5000 and maxrows=100;
 
-
-copy answers_photos (id, answer_id, url) from '../hackreactor/SDC/Q_and_A/data/answers_photos.csv' with header = true and numprocesses=8 and chunksize=5000 and maxrows=10;
+copy answers_photos (id, answer_id, url) from '../hackreactor/SDC/Q_and_A/data/answers_photos.csv' with header = true and numprocesses=8 and chunksize=5000 and maxrows=100;
 

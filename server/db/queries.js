@@ -45,14 +45,14 @@ const createAnswersPhotosTable = `
   ***************************************************************************** */
 const createPhotoType = `
   CREATE TYPE IF NOT EXISTS  photo (
-  id int,
-  answer_id int,
+  id bigint,
+  answer_id bigint,
   url text
   );`;
 
 const createAnswerType = `
   CREATE TYPE IF NOT EXISTS  answer (
-  id int,
+  id bigint,
   body text,
   date date,
   answerer_name text,
@@ -67,8 +67,8 @@ const createAnswerType = `
 const createAnswersWithPhotosTable = `
   CREATE TABLE IF NOT EXISTS
   answers (
-  answer_id int,
-  question_id int,
+  answer_id bigint,
+  question_id bigint,
   body text,
   date date,
   answerer_name text,
@@ -82,8 +82,8 @@ const createAnswersWithPhotosTable = `
 const createReportedAnswersTable = `
   CREATE TABLE IF NOT EXISTS
   reported_answers (
-  answer_id int,
-  question_id int,
+  answer_id bigint,
+  question_id bigint,
   body text,
   date date,
   answerer_name text,
@@ -96,14 +96,14 @@ const createReportedAnswersTable = `
 `;
 
 const createAnswersIdIndex = `
-  CREATE INDEX answer_idx
+  CREATE INDEX IF NOT EXISTS answer_idx
   ON answers (answer_id)
   `;
 
 const createQuestionsWithAnswersTable = `
   CREATE TABLE IF NOT EXISTS questions (
-  question_id int,
-  product_id int,
+  question_id bigint,
+  product_id bigint,
   question_body text,
   question_date date,
   asker_name text,
@@ -116,8 +116,8 @@ const createQuestionsWithAnswersTable = `
 
 const createReportedQuestionsTable = `
   CREATE TABLE IF NOT EXISTS reported_questions (
-  question_id int,
-  product_id int,
+  question_id bigint,
+  product_id bigint,
   question_body text,
   question_date date,
   asker_name text,
@@ -129,12 +129,12 @@ const createReportedQuestionsTable = `
   );`;
 
 const createQuestionsIdIndex = `
-  CREATE INDEX question_idx
+  CREATE INDEX IF NOT EXISTS question_idx
   ON questions (question_id)
   `;
 
 /** ****************************************************************************
-  *                      Helper tables
+  *                      Helper counter table
   ***************************************************************************** */
 const createCountersTable = `
   CREATE TABLE IF NOT EXISTS id_counters (
@@ -143,12 +143,11 @@ const createCountersTable = `
   PRIMARY KEY(table_name)
 );`;
 
-const createProductByQuestionsIdTable = `
-  CREATE TABLE IF NOT EXISTS questions_product_ids (
-  question_id int,
-  product_id int,
-  PRIMARY KEY(question_id)
-);`;
+const initializePhotoCounter = `
+  UPDATE id_counters
+  SET last_id = last_id + 1
+  WHERE table_name = 'photos'
+`;
 
 /** ****************************************************************************
   *                      Queries
@@ -197,35 +196,20 @@ const insertQuestion = `
   )
   Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-const insertProdIdByQid = `
-  INSERT INTO questions_product_ids (
-  question_id,
-  product_id
-)
-Values(?, ?)`;
-
 const updateCounter = `
   UPDATE id_counters
   SET last_id = last_id + 1
   WHERE table_name = ?`;
 
-const initializePhotoCounter = `
-  UPDATE id_counters
-  SET last_id = last_id + 1
-  WHERE table_name = 'photos'
-`;
-
 module.exports = {
   initializePhotoCounter,
   updateCounter,
-  insertProdIdByQid,
   insertQuestion,
   insertAnswer,
   questionAnswers,
   answerPhotos,
   allQuestions,
   allAnswers,
-  createProductByQuestionsIdTable,
   createCountersTable,
   createQuestionsIdIndex,
   createReportedQuestionsTable,

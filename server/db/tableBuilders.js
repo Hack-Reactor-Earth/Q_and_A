@@ -7,19 +7,17 @@ const queries = require('./queries');
 const options = { prepare: true, fetchSize: 100, autoPage: true };
 const populateNewAnswersTable = async () => {
   try {
-    let hundreds = 0;
+    // get all answers from the old answers table
     await client.eachRow(queries.allAnswers, [], {
       prepare: true, autoPage: true, fetchSize: 100,
     }, async (n, answer) => {
-      if (n === 99) {
-        hundreds++;
-      }
-      console.log({ answerHundreds: hundreds });
+      // for each answer ...
       try {
+        // get all photos by that answer id
         const photos = await client.execute(
           queries.answerPhotos, [answer.id], options,
         );
-        // Insert all answer data into answersWithPhotos table with photos array
+        // Insert all answer data into the new answer table with photos array
         await client.execute(queries.insertAnswer, [
           answer.id,
           answer.question_id,
@@ -31,6 +29,7 @@ const populateNewAnswersTable = async () => {
           answer.helpful,
           photos.rows,
         ], options);
+        // update the answer id_counter each time
         await client.execute(queries.updateCounter, ['answers'], options);
       } catch (err) {
         console.log(err);
@@ -43,17 +42,16 @@ const populateNewAnswersTable = async () => {
 
 const populateNewQuestionsTable = async () => {
   try {
-    let hundreds = 0;
+    // get all questions from the old questions table
     await client.eachRow(queries.allQuestions, [],
       options, async (n, question) => {
-        if (n === 99) {
-          hundreds++;
-        }
-        console.log({ questionHundreds: hundreds });
+        // for each question...
         try {
+          // get all answers by that question id
           const answers = await client.execute(
             queries.questionAnswers, [question.id], options,
           );
+          // create an answer object that will have its id as its key and its data as its value
           const answersObj = {};
           // create the object of answers for each insert
           answers.rows.forEach(async (a) => {
@@ -66,6 +64,9 @@ const populateNewQuestionsTable = async () => {
               photos: a.photos,
             };
           });
+          console.log(answersObj);
+          // insert all question data into the new question table
+          // with the answer object for each question
           await client.execute(queries.insertQuestion, [
             question.id,
             question.product_id,
@@ -77,10 +78,8 @@ const populateNewQuestionsTable = async () => {
             question.helpful,
             answersObj,
           ], options);
+          // update the question id_counter each time
           await client.execute(queries.updateCounter, ['questions'], options);
-          await client.execute(
-            queries.insertProdIdByQid, [question.id, question.product_id], options,
-          );
         } catch (err) {
           console.log(err);
         }

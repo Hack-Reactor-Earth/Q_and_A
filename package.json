@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon ./server/app.js",
-    "build:schema": "./server/db/schema.js",
-    "build:tables": "./server/db/tableBuilders.js"
+    "build:schema": "node ./server/db/schema.js",
+    "build:tables": "node ./server/db/tableBuilders.js"
   },
   "repository": {
     "type": "git",
