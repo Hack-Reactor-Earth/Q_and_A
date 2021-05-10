@@ -22,155 +22,97 @@ client.connect(() => [
   console.log('app: cassandra connected'),
 ]);
 
-const dropKeySpace = `
-  DROP KEYSPACE IF EXISTS q_and_a`;
+const dropKeySpace = 'DROP KEYSPACE IF EXISTS q_and_a';
 
-const createKeySpace = `
-  CREATE KEYSPACE IF NOT EXISTS q_and_a
-  WITH REPLICATION = {'class':'SimpleStrategy', 'replication_factor':3}`;
+const createKeySpace = 'CREATE KEYSPACE IF NOT EXISTS q_and_a WITH REPLICATION = {\'class\':\'SimpleStrategy\', \'replication_factor\':3}';
 
 /** ****************************************************************************
   *                      Initial tables to load csv data into
   ***************************************************************************** */
-const createQuestionsTable = `
-  CREATE TABLE IF NOT EXISTS old_questions (
-  id int,
-  product_id int,
-  body text,
-  date_written date,
-  asker_name text,
-  asker_email text,
-  reported boolean,
-  helpful int,
-  PRIMARY KEY(id, product_id, date_written)
-  );`;
-const createAnswersTable = `
-  CREATE TABLE IF NOT EXISTS old_answers (
-  id int,
-  question_id int,
-  body text,
-  date_written date,
-  answerer_name text,
-  answerer_email text,
-  reported boolean,
-  helpful int,
-  PRIMARY KEY(question_id, id, date_written)
-  );`;
-const createAnswersPhotosTable = `
-  CREATE TABLE IF NOT EXISTS answers_photos (
-  id int,
-  answer_id int,
-  url text,
-  PRIMARY KEY(answer_id, id)
-  );`;
+const createQuestionsTable = `CREATE TABLE IF NOT EXISTS questions (
+    id int,
+    product_id int,
+    body text,
+    date_written date,
+    asker_name text,
+    asker_email text,
+    reported boolean,
+    helpful int,
+    PRIMARY KEY(id, product_id, date_written)
+    );`;
+const createAnswersTable = `CREATE TABLE IF NOT EXISTS answers (
+    id int,
+    question_id int,
+    body text,
+    date_written date,
+    answerer_name text,
+    answerer_email text,
+    reported boolean,
+    helpful int,
+    PRIMARY KEY(question_id, id, date_written)
+    );`;
+const createAnswersPhotosTable = `CREATE TABLE IF NOT EXISTS answers_photos (
+    id int,
+    answer_id int,
+    url text,
+    PRIMARY KEY(answer_id, id)
+    );`;
 
 /** ****************************************************************************
   *                      Defined user types
   ***************************************************************************** */
-const createPhotoType = `
-  CREATE TYPE IF NOT EXISTS  photo (
-  id int,
-  answer_id int,
-  url text
+const createPhotoType = `CREATE TYPE IF NOT EXISTS  photo (
+    id int,
+    answer_id int,
+    url text
+);`;
+
+const createAnswerType = `CREATE TYPE IF NOT EXISTS  answer (
+    id int,
+    body text,
+    date date,
+    answerer_name text,
+    reported boolean,
+    helpfulness int,
+    photos list<frozen<photo>>
   );`;
 
-const createAnswerType = `
-  CREATE TYPE IF NOT EXISTS  answer (
-  id int,
-  body text,
-  date date,
-  answerer_name text,
-  reported boolean,
-  helpfulness int,
-  photos list<frozen<photo>>
-  );`;
+const createAnswerObjectType = `CREATE TYPE IF NOT EXISTS answerObject (
+  id frozen<answer>
+);`;
 
 /** ****************************************************************************
   *                      Tables to merge and nest data
   ***************************************************************************** */
-const createAnswersWithPhotosTable = `
-  CREATE TABLE IF NOT EXISTS
-  answers (
-  answer_id int,
-  question_id int,
-  body text,
-  date date,
-  answerer_name text,
-  answerer_email text,
-  reported boolean,
-  helpfulness int,
-  photos list<frozen<photo>>,
-  PRIMARY KEY(question_id, answer_id, date)
-  );`;
-
-const createReportedAnswersTable = `
-  CREATE TABLE IF NOT EXISTS
-  reported_answers (
-  answer_id int,
-  question_id int,
-  body text,
-  date date,
-  answerer_name text,
-  answerer_email text,
-  reported boolean,
-  helpfulness int,
-  photos list<frozen<photo>>,
-  PRIMARY KEY(question_id, answer_id, date)
-  );
-`;
-
-const createAnswersIdIndex = `
-  CREATE INDEX answer_idx
-  ON answers (answer_id)
-  `;
-
-const createQuestionsWithAnswersTable = `
-  CREATE TABLE IF NOT EXISTS questions (
-  question_id int,
-  product_id int,
-  question_body text,
-  question_date date,
-  asker_name text,
-  asker_email text,
-  reported boolean,
-  question_helpfulness int,
-  answers map<int, frozen<answer>>,
-  PRIMARY KEY(product_id, question_id, question_date)
-  );`;
-
-const createReportedQuestionsTable = `
-  CREATE TABLE IF NOT EXISTS reported_questions (
-  question_id int,
-  product_id int,
-  question_body text,
-  question_date date,
-  asker_name text,
-  asker_email text,
-  reported boolean,
-  question_helpfulness int,
-  answers map<int, frozen<answer>>,
-  PRIMARY KEY(product_id, question_id, question_date)
-  );`;
-
-const createQuestionsIdIndex = `
-  CREATE INDEX question_idx
-  ON questions (question_id)
-  `;
-
-/** ****************************************************************************
-  *                      Helper tables
-  ***************************************************************************** */
-const createCountersTable = `
-  CREATE TABLE IF NOT EXISTS id_counters (
-  table_name text,
-  last_id counter,
-  PRIMARY KEY(table_name)
+const createAnswersWithPhotosTable = `CREATE TABLE IF NOT EXISTS
+answersWithPhotos (
+    answer_id int,
+    question_id int,
+    body text,
+    date date,
+    answerer_name text,
+    answerer_email text,
+    reported boolean,
+    helpfulness int,
+    photos list<frozen<photo>>,
+    PRIMARY KEY(question_id, answer_id, date, helpfulness)
 );`;
 
-const createProductByQuestionsIdTable = `
-  CREATE TABLE IF NOT EXISTS questions_product_ids (
+const createQuestionsWithAnswersTable = `CREATE TABLE IF NOT EXISTS questionsWithAnswers (
+    question_id int,
+    product_id int,
+    question_body text,
+    question_date date,
+    asker_name text,
+    asker_email text,
+    reported boolean,
+    question_helpfulness int,
+    answers map<int, frozen<answer>>,
+    PRIMARY KEY(product_id, question_id, question_date, question_helpfulness)
+    );`;
+
+const createQuestionByIdTable = `CREATE TABLE IF NOT EXISTS question_ids (
   question_id int,
-  product_id int,
   PRIMARY KEY(question_id)
 );`;
 
@@ -178,66 +120,38 @@ const createProductByQuestionsIdTable = `
   *                      Queries
   ***************************************************************************** */
 // * read
-const allAnswers = `
-  SELECT * FROM old_answers`;
-
-const allQuestions = `
-  SELECT * FROM old_questions`;
-
-const answerPhotos = `
-  SELECT * FROM answers_photos
-  WHERE answer_id = ?`;
-
-const questionAnswers = `
-  SELECT * FROM answers
-  WHERE question_id = ?`;
-
+const allAnswers = 'SELECT * FROM answers';
+const allQuestions = 'SELECT * FROM questions';
+const answerPhotos = 'SELECT * FROM answers_photos WHERE answer_id = ?';
+const questionAnswers = 'SELECT * FROM answersWithPhotos WHERE question_id = ?';
+const getAllAnswersWithPhotos = 'SELECT * FROM answersWithPhotos';
+const getAllQuestionsWithAnswers = 'SELECT * FROM questionsWithAnswers';
 // * write
-const insertAnswer = `
-  INSERT INTO answers(
-  answer_id,
-  question_id,
-  body,
-  date,
-  answerer_name,
-  answerer_email,
-  reported,
-  helpfulness,
-  photos
-  )
-  VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+const insertAnswer = `INSERT INTO answersWithPhotos(
+    answer_id,
+    question_id,
+    body,
+    date,
+    answerer_name,
+    answerer_email,
+    reported,
+    helpfulness,
+    photos
+   )
+   VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-const insertQuestion = `
-  INSERT INTO questions(
-  question_id,
-  product_id,
-  question_body,
-  question_date,
-  asker_name,
-  asker_email,
-  reported,
-  question_helpfulness,
-  answers
-  )
-  Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-const insertProdIdByQid = `
-  INSERT INTO questions_product_ids (
-  question_id,
-  product_id
-)
-Values(?, ?)`;
-
-const updateCounter = `
-  UPDATE id_counters
-  SET last_id = last_id + 1
-  WHERE table_name = ?`;
-
-const initializePhotoCounter = `
-  UPDATE id_counters
-  SET last_id = last_id + 1
-  WHERE table_name = 'photos'
-`;
+const insertQuestion = `INSERT INTO questionsWithAnswers(
+    question_id,
+    product_id,
+    question_body,
+    question_date,
+    asker_name,
+    asker_email,
+    reported,
+    question_helpfulness,
+    answers
+    )
+Values(?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
 /** ****************************************************************************
   *                      Helper functions to build new tables
@@ -269,7 +183,6 @@ const populateAPmix = async () => {
           answer.helpful,
           photos.rows,
         ], options);
-        await client.execute(updateCounter, ['answers'], options);
       } catch (err) {
         console.log(err);
       }
@@ -287,7 +200,7 @@ const populateQAmix = async () => {
         if (n === 99) {
           hundreds++;
         }
-        console.log({ questionHundreds: hundreds });
+        console.log({ answerHundreds: hundreds });
         try {
           const answers = await client.execute(
             questionAnswers, [question.id], options,
@@ -315,8 +228,7 @@ const populateQAmix = async () => {
             question.helpful,
             answersObj,
           ], options);
-          await client.execute(updateCounter, ['questions'], options);
-          await client.execute(insertProdIdByQid, [question.id, question.product_id], options);
+          await client.execute('INSERT INTO question_ids', [question.id], options);
         } catch (err) {
           console.log(err);
         }
@@ -332,22 +244,17 @@ const populateQAmix = async () => {
 // eslint-disable-next-line no-unused-vars
 const runSchema = async () => {
   try {
-    await client.execute(dropKeySpace, []);
+    // await client.execute(dropKeySpace, []);
     await client.execute(createKeySpace, []);
     await client.execute(createQuestionsTable, []);
     await client.execute(createAnswersTable, []);
     await client.execute(createAnswersPhotosTable, []);
     await client.execute(createPhotoType, []);
     await client.execute(createAnswerType, []);
+    await client.execute(createAnswerObjectType, []);
     await client.execute(createAnswersWithPhotosTable, []);
-    await client.execute(createReportedAnswersTable, []);
     await client.execute(createQuestionsWithAnswersTable, []);
-    await client.execute(createReportedQuestionsTable, []);
-    await client.execute(createQuestionsIdIndex, []);
-    await client.execute(createAnswersIdIndex, []);
-    await client.execute(createCountersTable, []);
-    await client.execute(initializePhotoCounter, []);
-    await client.execute(createProductByQuestionsIdTable, []);
+    await client.execute(createQuestionByIdTable, []);
   } catch (err) {
     console.log(err);
   }
