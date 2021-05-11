@@ -118,25 +118,25 @@ const markQuestionAsHelpful = async (question_id) => {
 
 const getQuestionsByProductId = async (id, count, page) => {
   try {
-    let pageCount = parseInt(page);
+    // let pageCount = parseInt(page);
     const questions = await db.execute(
-      questionsByProductId, [id], { prepare: true, fetchSize: count * page, autoPage: true },
+      questionsByProductId, [id], { prepare: true, fetchSize: count, autoPage: true },
     );
-    let start = 0;
-    let stop = count;
-    const pages = [];
-    let curPage = [];
-    while (pageCount > 0) {
-      curPage.push(questions.rows.slice(start, stop));
-      start += parseInt(count);
-      stop = parseInt(count) + stop;
-      pages.push(curPage[0]);
-      curPage = [];
-      pageCount--;
-    }
+    // let start = 0;
+    // let stop = count;
+    // const pages = [];
+    // let curPage = [];
+    // while (pageCount > 0) {
+    //   curPage.push(questions.rows.slice(start, stop));
+    //   start += parseInt(count);
+    //   stop = parseInt(count) + stop;
+    //   pages.push(curPage[0]);
+    //   curPage = [];
+    //   pageCount--;
+    // }
     const result = {
       product_id: id,
-      results: pages,
+      results: questions.rows,
     };
     return result;
   } catch (err) {
