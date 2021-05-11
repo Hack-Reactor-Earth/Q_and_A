@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const logger = require('morgan');
 const bodyParser = require('body-parser');
 // eslint-disable-next-line no-unused-vars
