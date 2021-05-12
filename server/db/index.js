@@ -3,7 +3,11 @@ const cassandra = require('cassandra-driver');
 const { distance } = cassandra.types;
 
 const client = new cassandra.Client({
-  contactPoints: ['localhost'],
+  contactPoints: ['20.42.84.160'],
+  credentials: {
+    username: 'cassandra',
+    password: 'cassandra',
+  },
   localDataCenter: 'datacenter1',
   pooling: {
     coreConnectionsPerHost: {

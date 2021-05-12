@@ -3,7 +3,7 @@ const queries = require('./queries');
 
 const runSchema = async () => {
   try {
-    await client.execute(queries.dropKeySpace, []);
+    // await client.execute(queries.dropKeySpace, []);
     await client.execute(queries.createKeySpace, []);
     await client.execute(queries.createQuestionsTable, []);
     await client.execute(queries.createAnswersTable, []);
