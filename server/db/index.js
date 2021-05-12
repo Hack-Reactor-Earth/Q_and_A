@@ -3,10 +3,10 @@ const cassandra = require('cassandra-driver');
 const { distance } = cassandra.types;
 
 const client = new cassandra.Client({
-  contactPoints: ['20.42.84.160'],
+  contactPoints: [process.env.DB_LOCATION],
   credentials: {
-    username: 'cassandra',
-    password: 'cassandra',
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
   },
   localDataCenter: 'datacenter1',
   pooling: {
