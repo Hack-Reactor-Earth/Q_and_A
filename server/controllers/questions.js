@@ -44,7 +44,6 @@ router.get('/:question_id/answers', async (req, res) => {
     const count = req.query.count || 5;
     try {
       const pages = await answers.getAnswersByQuestionId(question_id, page, count);
-      console.log(pages.results.length);
       if (pages.results.length > 0) {
         res.status(200).json(pages);
       } else {
