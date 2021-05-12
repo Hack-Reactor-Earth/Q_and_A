@@ -1,23 +1,29 @@
 const express = require('express');
+const NodeCache = require('node-cache');
 
 const router = express.Router();
 const questions = require('../models/questions.js');
 const answers = require('../models/answers.js');
 
+const cache = new NodeCache({ maxKeys: 100 });
 /** ****************************************************************************
   *                      Get questions by product id GET
   ***************************************************************************** */
 router.get('/', async (req, res) => {
-  // eslint-disable-next-line no-unused-vars
-  try {
-    const { product_id } = req.query;
-    const page = req.query.page || 1;
-    const count = req.query.count || 5;
-    const pages = await questions.getQuestionsByProductId(product_id, count, page);
-    res.status(200).json(pages);
-  } catch (err) {
-    res.status(500).json({ message: `Error processing request ${err}` });
-    console.log(err);
+  const cacheKey = req.url;
+  if (cache.has(cacheKey)) {
+    res.status(200).send(cache.get(cacheKey));
+  } else {
+    try {
+      const { product_id } = req.query;
+      const page = req.query.page || 1;
+      const count = req.query.count || 5;
+      const pages = await questions.getQuestionsByProductId(product_id, count, page);
+      res.status(200).json(pages);
+    } catch (err) {
+      res.status(500).json({ message: `Error processing request ${err}` });
+      console.log(err);
+    }
   }
 });
 
@@ -25,15 +31,20 @@ router.get('/', async (req, res) => {
   *                      Get answers by question id
   ***************************************************************************** */
 router.get('/:question_id/answers', async (req, res) => {
-  const { question_id } = req.params;
-  const page = req.query.page || 1;
-  const count = req.query.count || 5;
-  try {
-    const pages = await answers.getAnswersByQuestionId(question_id, page, count);
-    res.status(200).json(pages);
-  } catch (err) {
-    res.status(500).json({ message: `Error processing request ${err}` });
-    console.log(err);
+  const cacheKey = req.url;
+  if (cache.has(cacheKey)) {
+    res.status(200).send(cache.get(cacheKey));
+  } else {
+    const { question_id } = req.params;
+    const page = req.query.page || 1;
+    const count = req.query.count || 5;
+    try {
+      const pages = await answers.getAnswersByQuestionId(question_id, page, count);
+      res.status(200).json(pages);
+    } catch (err) {
+      res.status(500).json({ message: `Error processing request ${err}` });
+      console.log(err);
+    }
   }
 });
 
