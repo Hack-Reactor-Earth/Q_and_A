@@ -19,7 +19,11 @@ router.get('/', async (req, res) => {
       const page = req.query.page || 1;
       const count = req.query.count || 5;
       const pages = await questions.getQuestionsByProductId(product_id, count, page);
-      res.status(200).json(pages);
+      if (pages.results.length > 0) {
+        res.status(200).json(pages);
+      } else {
+        res.status(400).json({ message: 'Error retrieving questions' });
+      }
     } catch (err) {
       res.status(500).json({ message: `Error processing request ${err}` });
       console.log(err);
@@ -40,7 +44,12 @@ router.get('/:question_id/answers', async (req, res) => {
     const count = req.query.count || 5;
     try {
       const pages = await answers.getAnswersByQuestionId(question_id, page, count);
-      res.status(200).json(pages);
+      console.log(pages.results.length);
+      if (pages.results.length > 0) {
+        res.status(200).json(pages);
+      } else {
+        res.status(400).json({ message: 'Error retrieving answers' });
+      }
     } catch (err) {
       res.status(500).json({ message: `Error processing request ${err}` });
       console.log(err);

@@ -145,6 +145,10 @@ const getQuestionsByProductId = async (id, count) => {
 };
 
 const createQuestionByProductId = async (question) => {
+  const validQuestion = await db.execute(getQuestion, [question.product_id], { prepare: true });
+  if (validQuestion.rowLength === 0) {
+    return null;
+  }
   const id = await db.execute(getLastQuestionId, [], { prepare: true });
   const questionId = id.rows[0].last_id;
   const data = await db.execute(createQuestion, [

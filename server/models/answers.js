@@ -219,7 +219,9 @@ const getAnswersByQuestionId = async (id, page, count) => {
       curPage.push(answers.rows.slice(start, stop));
       start += parseInt(count);
       stop = parseInt(count) + stop;
-      pages.push(curPage[0]);
+      if (curPage[0].length > 0) {
+        pages.push(curPage[0]);
+      }
       curPage = [];
       pageCount--;
     }
@@ -279,6 +281,10 @@ const insertImages = async (images, answerId) => {
   }
 };
 const createAnswerByProductId = async (answer) => {
+  const validAnswer = await db.execute(getAnswer, [answer.question_id], { prepare: true });
+  if (validAnswer.rowLength === 0) {
+    return null;
+  }
   try {
     // get the product id
     const question = await db.execute(getQuestion, [answer.question_id], { prepare: true });
