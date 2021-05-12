@@ -116,7 +116,7 @@ const markQuestionAsHelpful = async (question_id) => {
   }
 };
 
-const getQuestionsByProductId = async (id, count, page) => {
+const getQuestionsByProductId = async (id, count) => {
   try {
     // let pageCount = parseInt(page);
     const questions = await db.execute(

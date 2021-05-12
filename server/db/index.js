@@ -19,7 +19,7 @@ const client = new cassandra.Client({
       [distance.remote]: 8,
     },
   },
-  // keyspace: 'q_and_a',
+  keyspace: 'q_and_a',
 });
 
 client.connect(() => [

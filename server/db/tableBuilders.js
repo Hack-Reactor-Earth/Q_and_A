@@ -7,10 +7,12 @@ const queries = require('./queries');
 const options = { prepare: true, fetchSize: 100, autoPage: true };
 const populateNewAnswersTable = async () => {
   try {
+    let counter = 0;
     // get all answers from the old answers table
     await client.eachRow(queries.allAnswers, [], {
       prepare: true, autoPage: true, fetchSize: 100,
     }, async (n, answer) => {
+      process.stdout.write(`Row: ${++counter}\r`);
       // for each answer ...
       try {
         // get all photos by that answer id
@@ -42,9 +44,11 @@ const populateNewAnswersTable = async () => {
 
 const populateNewQuestionsTable = async () => {
   try {
+    let counter = 0;
     // get all questions from the old questions table
     await client.eachRow(queries.allQuestions, [],
       options, async (n, question) => {
+        process.stdout.write(`Row: ${++counter}\r`);
         // for each question...
         try {
           // get all answers by that question id
@@ -64,7 +68,6 @@ const populateNewQuestionsTable = async () => {
               photos: a.photos,
             };
           });
-          console.log(answersObj);
           // insert all question data into the new question table
           // with the answer object for each question
           await client.execute(queries.insertQuestion, [
