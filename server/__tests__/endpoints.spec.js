@@ -13,6 +13,7 @@ describe('answers router tests', () => {
       .put('/qa/answers/46/helpful');
     expect(response.statusCode).toBe(204);
   });
+
   it(`PUT /qa/answers/:answer_id/helpful,
   (can NOT mark an answer as helpful if answerId does not exist)`, async () => {
     const response = await supertest(server)
@@ -20,6 +21,7 @@ describe('answers router tests', () => {
     expect(response.statusCode).toBe(400);
     expect(response.body.message).toBe('Error updating');
   });
+
   it(`PUT /qa/answers/:answer_id/report,
   (can NOT mark a report an answer answerId does not exist)`, async () => {
     const response = await supertest(server)
@@ -75,6 +77,7 @@ describe('questions router tests', () => {
     expect(response.headers['content-type']).toBe(contentType);
     expect(response.body.question).toBe('1');
   });
+
   it(`GET /qa/questions/:question_id/answers,
   (can NOT get all answers when given an invalid question)`, async () => {
     const response = await supertest(server)
