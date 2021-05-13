@@ -13,5 +13,5 @@ The Q_and_A API is a service for the [Catwalk client](https://github.com/Linked-
 
 ## Usage
 
-- The Documentation can be found here for interacting with the endpoints
+- The Documentation for interacting with the endpoints can be found here:
 https://documenter.getpostman.com/view/10971957/TzRUC7yA
