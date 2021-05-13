@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
       const count = req.query.count || 5;
       const pages = await questions.getQuestionsByProductId(product_id, count, page);
       if (pages.results.length > 0) {
+        cache.set(cacheKey, pages);
         res.status(200).json(pages);
       } else {
         res.status(400).json({ message: 'Error retrieving questions' });
@@ -45,6 +46,7 @@ router.get('/:question_id/answers', async (req, res) => {
     try {
       const pages = await answers.getAnswersByQuestionId(question_id, page, count);
       if (pages.results.length > 0) {
+        cache.set(cacheKey, pages);
         res.status(200).json(pages);
       } else {
         res.status(400).json({ message: 'Error retrieving answers' });
